@@ -3,14 +3,15 @@ import { CreateEventDto, UpdateEventDto, DeleteDto } from './common';
 import { PrismaClient } from '@prisma/client';
 import { RpcException } from '@nestjs/microservices';
 import { StatusEvent } from './common';
+import { PaginationDto } from 'src/common';
 
 @Injectable()
 export class EventService extends PrismaClient implements OnModuleInit {
-  
+
   private readonly logger = new Logger('Events-Service');
 
   async onModuleInit() {
-    await this.$connect(); 
+    await this.$connect();
   }
 
   async create(createEventDto: CreateEventDto) {
@@ -21,8 +22,103 @@ export class EventService extends PrismaClient implements OnModuleInit {
     return event;
   }
 
-  async findAll() {
-    const events = await this.event.findMany({
+  async findAllToday(paginationDto: PaginationDto) {
+    const { page, limit } = paginationDto;
+
+    const total = await this.event.count({
+      where: {
+        status: {
+          equals: StatusEvent.TODAY
+        }
+      }
+    });
+
+    const lastPage = Math.ceil(total / limit);
+
+    return {
+      data: await this.event.findMany({
+        where: {
+          status: {
+            equals: StatusEvent.TODAY
+          }
+        },
+        skip: (page - 1) * limit,
+        take: limit
+      }),
+      meta: {
+        total,
+        page,
+        lastPage
+      }
+    }
+  }
+
+  async findAllNow(paginationDto: PaginationDto) {
+    const { page, limit } = paginationDto;
+
+    const total = await this.event.count({
+      where: {
+        status: {
+          equals: StatusEvent.NOW
+        }
+      }
+    });
+
+    const lastPage = Math.ceil(total / limit);
+
+    return {
+      data: await this.event.findMany({
+        where: {
+          status: {
+            equals: StatusEvent.NOW
+          }
+        },
+        skip: (page - 1) * limit,
+        take: limit
+      }),
+      meta: {
+        total,
+        page,
+        lastPage
+      }
+    }
+  }
+
+  async findAllProgrammed(paginationDto: PaginationDto) {
+    const { page, limit } = paginationDto;
+
+    const total = await this.event.count({
+      where: {
+        status: {
+          equals: StatusEvent.PROGRAMMED
+        }
+      }
+    });
+
+    const lastPage = Math.ceil(total / limit);
+
+    return {
+      data: await this.event.findMany({
+        where: {
+          status: {
+            equals: StatusEvent.PROGRAMMED
+          }
+        },
+        skip: (page - 1) * limit,
+        take: limit
+      }),
+      meta: {
+        total,
+        page,
+        lastPage
+      }
+    }
+  }
+
+  async findAll(paginationDto: PaginationDto) {
+    const { page, limit } = paginationDto;
+
+    const total = await this.event.count({
       where: {
         status: {
           not: StatusEvent.COMPLETED
@@ -30,7 +126,24 @@ export class EventService extends PrismaClient implements OnModuleInit {
       }
     });
 
-    return events;
+    const lastPage = Math.ceil(total / limit);
+    
+    return {
+      data: await this.event.findMany({
+        where: {
+          status: {
+            equals: StatusEvent.NOW
+          }
+        },
+        skip: (page - 1) * limit,
+        take: limit
+      }),
+      meta: {
+        total,
+        page,
+        lastPage
+      }
+    }
   }
 
   async findForUser(id: number) {

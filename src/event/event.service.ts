@@ -40,8 +40,15 @@ export class EventService extends PrismaClient implements OnModuleInit {
     return event;
   }
 
-  update(updateEventDto: UpdateEventDto) {
-    return `This action updates a #${updateEventDto} event`;
+  async update(id: number, updateEventDto: UpdateEventDto) {
+    await this.findOne(id);
+    const event = await this.event.update({
+      data: updateEventDto,
+      where: {
+        id
+      }
+    })
+    return event;
   }
 
   remove(id: number) {

@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Event {
+  id          Int         @id @default(autoincrement())
+  name        String
+  description String
+  userId      Int
+  status      StatusEvent @default(PROGRAMMED)
+  start_time  DateTime
+  award       Award[]
+  card        Card[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Award {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  num_award   Int
+  winner_user Int?
+  gameId      Int?
+  event       Event    @relation(fields: [eventId], references: [id])
+  eventId     Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Card {
+  id        Int      @id @default(autoincrement())
+  num       Int
+  buyer     Int
+  event     Event    @relation(fields: [eventId], references: [id])
+  eventId   Int
+  nums      String
+  price     Float
+  available Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([available])
+}
+
+enum StatusEvent {
+  TODAY
+  NOW
+  PROGRAMMED
+  COMPLETED
+}

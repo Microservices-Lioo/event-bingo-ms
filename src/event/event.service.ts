@@ -1,7 +1,8 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { CreateEventDto } from './common/dto/create-event.dto';
 import { UpdateEventDto } from './common/dto/update-event.dto';
 import { PrismaClient } from '@prisma/client';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class EventService extends PrismaClient implements OnModuleInit {
@@ -24,12 +25,23 @@ export class EventService extends PrismaClient implements OnModuleInit {
     return `This action returns all event`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} event`;
+  async findOne(id: number) {
+    const event = await this.event.findFirst({
+      where: {
+        id
+      }
+    });
+
+    if (!event) throw new RpcException({
+      status: HttpStatus.NOT_FOUND,
+      message: `This event with id #${id} not found`
+    });
+
+    return event;
   }
 
-  update(id: number, updateEventDto: UpdateEventDto) {
-    return `This action updates a #${id} event`;
+  update(updateEventDto: UpdateEventDto) {
+    return `This action updates a #${updateEventDto} event`;
   }
 
   remove(id: number) {

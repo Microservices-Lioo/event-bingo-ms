@@ -45,7 +45,7 @@ model Card {
   buyer     Int
   event     Event    @relation(fields: [eventId], references: [id])
   eventId   Int
-  nums      String
+  nums      Json
   price     Float
   available Boolean  @default(true)
   createdAt DateTime @default(now())

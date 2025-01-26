@@ -1,8 +1,8 @@
 import { HttpStatus, Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { CreateEventDto } from './common/dto/create-event.dto';
-import { UpdateEventDto } from './common/dto/update-event.dto';
+import { CreateEventDto, UpdateEventDto, DeleteDto } from './common';
 import { PrismaClient } from '@prisma/client';
 import { RpcException } from '@nestjs/microservices';
+import { StatusEvent } from './common';
 
 @Injectable()
 export class EventService extends PrismaClient implements OnModuleInit {
@@ -21,8 +21,26 @@ export class EventService extends PrismaClient implements OnModuleInit {
     return event;
   }
 
-  findAll() {
-    return `This action returns all event`;
+  async findAll() {
+    const events = await this.event.findMany({
+      where: {
+        status: {
+          not: StatusEvent.COMPLETED
+        }
+      }
+    });
+
+    return events;
+  }
+
+  async findForUser(id: number) {
+    const events = await this.event.findMany({
+      where: {
+        userId: id
+      }
+    });
+
+    return events;
   }
 
   async findOne(id: number) {
@@ -51,7 +69,22 @@ export class EventService extends PrismaClient implements OnModuleInit {
     return event;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} event`;
+  async remove(deletDto: DeleteDto) {
+    const { id, userId } = deletDto;
+    const event = await this.findOne(id);
+
+    if (event.userId != userId) {
+      throw new RpcException({
+        status: HttpStatus.FORBIDDEN,
+        message: `You are not allowed to delete this event`,
+        error: 'forbidden_action'
+      })
+    }
+
+    await this.event.delete({
+      where: { id: id },
+    });
+
+    return event;
   }
 }

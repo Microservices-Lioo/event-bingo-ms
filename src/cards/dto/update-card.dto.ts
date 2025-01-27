@@ -1,10 +1,24 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateCardDto } from './create-card.dto';
-import { IsNumber, IsPositive } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional, IsPositive, Min, ValidateIf } from 'class-validator';
+import { Type } from 'class-transformer';
 
-export class UpdateCardDto extends PartialType(CreateCardDto) {
-
+export class UpdateCardDto {
     @IsNumber()
     @IsPositive()
     id: number;
+
+    @IsNumber()
+    @IsPositive()
+    buyer: number;
+
+    @IsOptional()
+    @IsNumber({
+        maxDecimalPlaces: 4
+    })
+    @IsPositive()
+    @Type( () => Number)
+    price: number;
+
+    @IsOptional()
+    @IsBoolean()
+    available: boolean;
 }

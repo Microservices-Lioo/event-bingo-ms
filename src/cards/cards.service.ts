@@ -1,5 +1,5 @@
 
-import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { CreateCardDto } from './dto/create-card.dto';
 import { UpdateCardDto } from './dto/update-card.dto';
 import { Prisma, PrismaClient } from '@prisma/client';
@@ -55,49 +55,62 @@ export class CardsService extends PrismaClient implements OnModuleInit {
     });
   }
 
-  // async findAllEvent(event: number, paginationDto: PaginationDto) {
-  //   const { page, limit } = paginationDto;
+  async findOne(id: number) {
+    const card = await this.card.findFirst({
+      where: {
+        id
+      }
+    });
 
-  //   const total = await this.cards.count({
-  //     where: {
-  //       available: true
-  //     }
-  //   });
-  //   const lastPage = Math.ceil( total / limit );
+    if (!card) throw new RpcException({
+      status: HttpStatus.NOT_FOUND,
+      message: `Card with id #${id} not found`
+    });
+    
+    return card;
+  }
 
-  //   return {
-  //     data: await this.cards.findMany({
-  //       where: {
-  //         event: event,
-  //         available: true
-  //       },
-  //       skip: (page - 1) * limit,
-  //       take: limit
-  //     }),
-  //     meta: {
-  //       total,
-  //       page,
-  //       lastPage
-  //     }
-  //   }
-  // }
+  async findAllCardsByEvent(eventId: number, paginationDto: PaginationDto) {
+    const { page, limit } = paginationDto;
 
-  // async findOne(id: number) {
-  //   const card = await  this.cards.findFirst({
-  //     where: {
-  //       id: id,
-  //       available: true
-  //     }
-  //   });
+    const total = await this.card.count({
+      where: {
+        available: true
+      }
+    });
 
-  //   if ( !card ) throw new RpcException(`Card with id #${id} not found`);
+    const lastPage = Math.ceil( total / limit );
 
-  //   return card;
-  // }
+    return {
+      data: await this.card.findMany({
+        where: {
+          eventId: eventId,
+          available: true
+        },
+        skip: (page - 1) * limit,
+        take: limit
+      }),
+      meta: {
+        total,
+        page,
+        lastPage
+      }
+    }
+  }
 
-  // update(id: number, updateCardDto: UpdateCardDto) {
-  //   return `This action updates a #${id} card`;
-  // }
+  async update(updateCardDto: UpdateCardDto) {
+    const { id, ...data } = updateCardDto;
+    await this.findOne(id);
+
+    const event = await this.card.update({
+      data: data,
+      where: {
+        id
+      }
+    });
+
+    return event;
+  }
 
   // async remove(id: number) {
 

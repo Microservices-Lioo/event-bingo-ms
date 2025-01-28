@@ -12,7 +12,7 @@ export class CreateEventDto {
     description: string;
 
     @IsNumber()
-    @Min(1)
+    @Min(0)
     userId: number;    
 
     @Type(() => Date)

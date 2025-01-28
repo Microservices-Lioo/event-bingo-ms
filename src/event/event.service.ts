@@ -146,7 +146,7 @@ export class EventService extends PrismaClient implements OnModuleInit {
     }
   }
 
-  async findForUser(id: number) {
+  async findAllByUser(id: number) {
     const events = await this.event.findMany({
       where: {
         userId: id
@@ -154,6 +154,22 @@ export class EventService extends PrismaClient implements OnModuleInit {
     });
 
     return events;
+  }
+
+  async findByUser(userId: number, eventId: number) {
+    const event = await this.event.findFirst({
+      where: {
+        userId: userId,
+        id: eventId
+      }
+    });
+
+    if (!event) throw new RpcException({
+      status: HttpStatus.NOT_FOUND,
+      message: `This event with id #${eventId} not found`
+    });
+
+    return event;
   }
 
   async findOne(id: number) {
@@ -172,14 +188,36 @@ export class EventService extends PrismaClient implements OnModuleInit {
   }
 
   async update(id: number, updateEventDto: UpdateEventDto) {
-    await this.findOne(id);
-    const event = await this.event.update({
+    
+    const event = await this.findOne(id);
+    
+    if ( event.status == StatusEvent.COMPLETED) throw new RpcException({
+      status: HttpStatus.CONFLICT,
+      message: `The finished event`,
+      error: 'conflic_event_ended'
+    });
+
+    if ( event.userId != updateEventDto.userId ) throw new RpcException({
+      status: HttpStatus.FORBIDDEN,
+      message: `This user is not allowed to edit the event`,
+      error: 'forbidden_event_edit'
+    });
+
+    if ( updateEventDto.start_time ) {
+      updateEventDto.status = StatusEvent.PROGRAMMED;
+    } else {
+      delete updateEventDto.status;
+    }
+
+    delete updateEventDto.userId;
+
+    const eventNew = await this.event.update({
       data: updateEventDto,
       where: {
         id
       }
     })
-    return event;
+    return eventNew;
   }
 
   async remove(deletDto: DeleteDto) {

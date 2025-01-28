@@ -10,13 +10,13 @@ export class UpdateCardDto {
     @IsPositive()
     buyer: number;
 
-    @IsOptional()
-    @IsNumber({
-        maxDecimalPlaces: 4
-    })
+    @IsNumber()
     @IsPositive()
-    @Type( () => Number)
-    price: number;
+    eventId: number;
+
+    @IsNumber()
+    @IsPositive()
+    userId: number;
 
     @IsOptional()
     @IsBoolean()

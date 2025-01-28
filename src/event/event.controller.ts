@@ -35,7 +35,7 @@ export class EventController {
 
   @MessagePattern('findForUserEvent')
   findForUser(@Payload() id: number) {
-    return this.eventService.findForUser(id);
+    return this.eventService.findAllByUser(id);
   }
 
   @MessagePattern('findOneEvent')

@@ -1,9 +1,10 @@
-import { HttpStatus, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { forwardRef, HttpStatus, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { CreateEventDto, UpdateEventDto, DeleteDto } from './common';
 import { PrismaClient } from '@prisma/client';
 import { RpcException } from '@nestjs/microservices';
 import { StatusEvent } from './common';
 import { PaginationDto } from 'src/common';
+import { CardsService } from 'src/cards/cards.service';
 
 @Injectable()
 export class EventService extends PrismaClient implements OnModuleInit {
@@ -12,6 +13,12 @@ export class EventService extends PrismaClient implements OnModuleInit {
 
   async onModuleInit() {
     await this.$connect();
+  }
+
+  constructor(
+    @Inject(forwardRef(() => CardsService))
+    private readonly servCard: CardsService) {
+    super();
   }
 
   async create(createEventDto: CreateEventDto) {
@@ -194,7 +201,7 @@ export class EventService extends PrismaClient implements OnModuleInit {
     if ( event.status == StatusEvent.COMPLETED) throw new RpcException({
       status: HttpStatus.CONFLICT,
       message: `The finished event`,
-      error: 'conflic_event_ended'
+      error: 'conflict_event_ended'
     });
 
     if ( event.userId != updateEventDto.userId ) throw new RpcException({
@@ -228,9 +235,27 @@ export class EventService extends PrismaClient implements OnModuleInit {
       throw new RpcException({
         status: HttpStatus.FORBIDDEN,
         message: `You are not allowed to delete this event`,
-        error: 'forbidden_action'
+        error: 'forbidden_event_delete'
       })
     }
+
+    if (event.status == StatusEvent.COMPLETED) {
+      throw new RpcException({
+        status: HttpStatus.FORBIDDEN,
+        message: `The finished event`,
+        error: 'forbidden_event_ended'
+      })
+    }
+
+    const cards = await this.servCard.findAllCardsByEvent(id, { limit: 10, page: 1 });
+
+
+    if ( cards.data.length > 0 ) throw new RpcException({
+      status: HttpStatus.CONFLICT,
+      message: `This event has cards sold.`,
+      error: 'conflict_event_cards_sold'
+    });
+
 
     await this.event.delete({
       where: { id: id },

@@ -33,9 +33,10 @@ export class EventController {
     return this.eventService.findAll(pagination);
   }
 
-  @MessagePattern('findForUserEvent')
-  findForUser(@Payload() id: number) {
-    return this.eventService.findAllByUser(id);
+  @MessagePattern('findByUserEvent')
+  findByUser(@Payload() payload: { id: number, pagination: PaginationDto}) {
+    const { id, pagination } = payload;
+    return this.eventService.findAllByUser(id, pagination);
   }
 
   @MessagePattern('findOneEvent')

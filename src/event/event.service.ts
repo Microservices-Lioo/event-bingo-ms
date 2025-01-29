@@ -139,7 +139,7 @@ export class EventService extends PrismaClient implements OnModuleInit {
       data: await this.event.findMany({
         where: {
           status: {
-            equals: StatusEvent.NOW
+            not: StatusEvent.COMPLETED
           }
         },
         skip: (page - 1) * limit,
@@ -153,14 +153,31 @@ export class EventService extends PrismaClient implements OnModuleInit {
     }
   }
 
-  async findAllByUser(id: number) {
-    const events = await this.event.findMany({
+  async findAllByUser(id: number, paginationDto: PaginationDto) {
+    const { page, limit } = paginationDto;
+
+    const total = await this.event.count({
       where: {
         userId: id
       }
     });
 
-    return events;
+    const lastPage = Math.ceil(total / limit);
+    
+    return {
+      data: await this.event.findMany({
+        where: {
+          userId: id
+        },
+        skip: (page - 1) * limit,
+        take: limit
+      }),
+      meta: {
+        total,
+        page,
+        lastPage
+      }
+    }
   }
 
   async findByUser(userId: number, eventId: number) {

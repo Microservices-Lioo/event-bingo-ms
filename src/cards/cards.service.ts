@@ -1,6 +1,6 @@
 
 import { forwardRef, HttpStatus, Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
-import { CreateCardDto, UpdateCardDto } from './dto';
+import { CreateCardDto, UpdateAvailableDto } from './dto';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { RpcException } from '@nestjs/microservices';
 import { PaginationDto } from 'src/common';
@@ -112,43 +112,6 @@ export class CardsService extends PrismaClient implements OnModuleInit {
     }
   }
 
-  async update(updateCardDto: UpdateCardDto) {
-    const { id, eventId, buyer, userId, ...data } = updateCardDto;
-    
-    const existCard = await this.findOne(id);
-
-    if (existCard.buyer == userId) throw new RpcException({
-      status: HttpStatus.FORBIDDEN,
-      message: `You cannot edit your own card`,
-      error: 'forbidden_action'
-    });
-
-    if (existCard.buyer != buyer) throw new RpcException({
-      status: HttpStatus.FORBIDDEN,
-      message: `The user with id #${buyer} has bought this card`,
-      error: 'forbidden_action'
-    });
-
-    await this.eventServ.findByUser(userId, eventId);
-
-    // if (event.userId != userId) throw new RpcException({
-    //   status: HttpStatus.FORBIDDEN,
-    //   message: `This action not allowed for you`,
-    //   error: 'forbidden_action'
-    // });
-
-    const card = await this.card.update({
-      data: data,
-      where: {
-        id,
-        eventId,
-        buyer
-      }
-    });
-
-    return card;
-  }
-
   generateCard() {
     const card = [];
     const col1 = this.generateNumbersColm(1, 15, 5).sort((a, b) => a - b);
@@ -181,5 +144,35 @@ export class CardsService extends PrismaClient implements OnModuleInit {
       if (!numbs.includes(num)) numbs.push(num);
     }
     return numbs;
+  }
+
+  async updateAvailable(updateAvailable: UpdateAvailableDto) {
+    const { userId, eventId, cardId } = updateAvailable;
+    
+    const card = await this.findOne(cardId);
+
+    const event = await this.eventServ.findOne(eventId);
+
+    if (event.userId != userId) throw new RpcException({
+      status: HttpStatus.FORBIDDEN,
+      message: `You cannot disable this card`,
+      error: 'forbidden_available_card'
+    });
+
+    if (card.buyer == userId) throw new RpcException({
+      status: HttpStatus.FORBIDDEN,
+      message: `You cannot disable this card`,
+      error: 'forbidden_available_card'
+    });
+
+    await this.card.update({
+      data: {
+        available: false
+      },
+      where: {
+        id: cardId
+      }
+    })
+    return true;
   }
 }

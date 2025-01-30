@@ -1,9 +1,8 @@
-import { Controller, Get, Param, ParseIntPipe, Patch } from '@nestjs/common';
+import { Controller, ParseIntPipe } from '@nestjs/common';
 import { CardsService } from './cards.service';
-import { CreateCardDto } from './dto/create-card.dto';
-import { UpdateCardDto } from './dto/update-card.dto';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PaginationDto } from 'src/common';
+import { CreateCardDto, UpdateAvailableDto } from './dto';
 
 @Controller('cards')
 export class CardsController {
@@ -14,13 +13,11 @@ export class CardsController {
     return this.cardsService.create(createCardDto);
   }
   
-  @Get(':id')
   @MessagePattern('findOneCard')
   findOne(@Payload('id', ParseIntPipe) id: number) {
     return this.cardsService.findOne(id);
   }
   
-  @Get('/event/:eventId')
   @MessagePattern('findAllCardsByEvent')
   findAllCardsByEvent(
     @Payload() payload: { eventId: number, paginationDto: PaginationDto}
@@ -29,17 +26,10 @@ export class CardsController {
     return this.cardsService.findAllCardsByEvent(eventId, paginationDto);
   }
 
-  @Patch(':id')
-  @MessagePattern('updateCard')
-  update(
-    @Payload() updateCardDto: UpdateCardDto
+  @MessagePattern('updateAvailableCard')
+  updateAvailable(
+    @Payload() updateAvailableDto: UpdateAvailableDto
   ) {
-    return this.cardsService.update(updateCardDto);
+    return this.cardsService.updateAvailable(updateAvailableDto);
   }
-
-  // @Delete(':id')
-  // @MessagePattern({ cmd: 'remove-card' })
-  // remove(@Payload('id', ParseIntPipe) id: number) {
-  //   return this.cardsService.remove(id);
-  // }
 }

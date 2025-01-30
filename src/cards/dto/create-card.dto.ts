@@ -1,5 +1,4 @@
-import { Type } from "class-transformer";
-import { IsNotEmpty, IsNumber, IsPositive } from "class-validator";
+import { IsNumber, IsPositive } from "class-validator";
 
 export class CreateCardDto {
 

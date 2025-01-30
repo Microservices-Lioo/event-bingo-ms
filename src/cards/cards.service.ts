@@ -1,15 +1,21 @@
 
-import { HttpStatus, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
-import { CreateCardDto } from './dto/create-card.dto';
-import { UpdateCardDto } from './dto/update-card.dto';
+import { forwardRef, HttpStatus, Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { CreateCardDto, UpdateCardDto } from './dto';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { RpcException } from '@nestjs/microservices';
 import { PaginationDto } from 'src/common';
+import { EventService } from 'src/event/event.service';
 
 @Injectable()
 export class CardsService extends PrismaClient implements OnModuleInit {
 
   private readonly logger = new Logger('Cards-Service');
+
+  constructor(
+    @Inject(forwardRef(() => EventService))
+    private readonly eventServ: EventService) {
+    super();
+  }
 
   async onModuleInit() {
     await this.$connect();
@@ -17,9 +23,18 @@ export class CardsService extends PrismaClient implements OnModuleInit {
   }
 
   async create(createCardDto: CreateCardDto) {
+    const { buyer, eventId } = createCardDto;
     let card_nums: any[];
     let existCard = null;
     let numCard = 0;
+
+    const event = await this.eventServ.findOne(eventId);
+
+    if (event.userId == buyer) throw new RpcException({
+      status: HttpStatus.FORBIDDEN,
+      message: `You cannot participate in your own event.`,
+      error: 'forbidden_participate_event'
+    });
 
     do {
       card_nums = [];
@@ -27,7 +42,7 @@ export class CardsService extends PrismaClient implements OnModuleInit {
 
       existCard = await this.card.findFirst({
         where: {
-          eventId: createCardDto.eventId,
+          eventId: eventId,
           nums: {
             equals: card_nums
           }
@@ -38,7 +53,7 @@ export class CardsService extends PrismaClient implements OnModuleInit {
 
     const numsCards = await this.card.count({
       where: {
-        eventId: createCardDto.eventId
+        eventId: eventId
       }
     });
 
@@ -46,11 +61,10 @@ export class CardsService extends PrismaClient implements OnModuleInit {
 
     return this.card.create({
       data: {
-        buyer: createCardDto.buyer,
-        eventId: createCardDto.eventId,
-        price: createCardDto.price,
-        num: 2,
-        nums: card_nums,
+        buyer: buyer,
+        eventId: eventId,
+        num: numCard,
+        nums: card_nums
       }
     });
   }
@@ -99,33 +113,41 @@ export class CardsService extends PrismaClient implements OnModuleInit {
   }
 
   async update(updateCardDto: UpdateCardDto) {
-    const { id, ...data } = updateCardDto;
-    await this.findOne(id);
+    const { id, eventId, buyer, userId, ...data } = updateCardDto;
+    
+    const existCard = await this.findOne(id);
 
-    const event = await this.card.update({
+    if (existCard.buyer == userId) throw new RpcException({
+      status: HttpStatus.FORBIDDEN,
+      message: `You cannot edit your own card`,
+      error: 'forbidden_action'
+    });
+
+    if (existCard.buyer != buyer) throw new RpcException({
+      status: HttpStatus.FORBIDDEN,
+      message: `The user with id #${buyer} has bought this card`,
+      error: 'forbidden_action'
+    });
+
+    await this.eventServ.findByUser(userId, eventId);
+
+    // if (event.userId != userId) throw new RpcException({
+    //   status: HttpStatus.FORBIDDEN,
+    //   message: `This action not allowed for you`,
+    //   error: 'forbidden_action'
+    // });
+
+    const card = await this.card.update({
       data: data,
       where: {
-        id
+        id,
+        eventId,
+        buyer
       }
     });
 
-    return event;
+    return card;
   }
-
-  // async remove(id: number) {
-
-  //   await this.findOne(id);
-    
-  //   return await this.cards.update({
-  //     where: {
-  //       id: id
-  //     },
-  //     data: {
-  //       available: false
-  //     }
-  //   })
-
-  // }
 
   generateCard() {
     const card = [];

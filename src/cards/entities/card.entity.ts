@@ -4,6 +4,5 @@ export class Card {
     buyer: number;
     eventId: number;
     nums: string;
-    precio: number;
     available: boolean;
 }

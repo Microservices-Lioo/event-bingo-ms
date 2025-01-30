@@ -11,12 +11,4 @@ export class CreateCardDto {
     @IsPositive()
     buyer: number;
 
-    @IsNotEmpty()
-    @IsNumber({
-        maxDecimalPlaces: 4
-    })
-    @IsPositive()
-    @Type( () => Number)
-    price: number;
-
 }

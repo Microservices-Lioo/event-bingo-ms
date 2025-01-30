@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsNumber, Min } from "class-validator";
 
-export class DeleteDto {
+export class DeleteEventDto {
     @IsNumber()
     @IsNotEmpty()
     @Min(1)

@@ -1,5 +1,5 @@
 import { forwardRef, HttpStatus, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { CreateEventDto, UpdateEventDto, DeleteDto } from './common';
+import { CreateEventDto, UpdateEventDto, DeleteEventDto, UpdateStatusEventDto } from './common';
 import { PrismaClient } from '@prisma/client';
 import { RpcException } from '@nestjs/microservices';
 import { StatusEvent } from './common';
@@ -134,7 +134,7 @@ export class EventService extends PrismaClient implements OnModuleInit {
     });
 
     const lastPage = Math.ceil(total / limit);
-    
+
     return {
       data: await this.event.findMany({
         where: {
@@ -163,7 +163,7 @@ export class EventService extends PrismaClient implements OnModuleInit {
     });
 
     const lastPage = Math.ceil(total / limit);
-    
+
     return {
       data: await this.event.findMany({
         where: {
@@ -212,28 +212,34 @@ export class EventService extends PrismaClient implements OnModuleInit {
   }
 
   async update(id: number, updateEventDto: UpdateEventDto) {
-    
+
     const event = await this.findOne(id);
-    
-    if ( event.status == StatusEvent.COMPLETED) throw new RpcException({
+
+    if (event.status == StatusEvent.COMPLETED) throw new RpcException({
       status: HttpStatus.CONFLICT,
       message: `The finished event`,
-      error: 'conflict_event_ended'
+      error: 'conflict_endend_event'
     });
 
-    if ( event.userId != updateEventDto.userId ) throw new RpcException({
+    if (event.userId != updateEventDto.userId) throw new RpcException({
       status: HttpStatus.FORBIDDEN,
       message: `This user is not allowed to edit the event`,
-      error: 'forbidden_event_edit'
+      error: 'forbidden_edit_event'
     });
 
-    if ( updateEventDto.start_time ) {
+    if (updateEventDto.start_time) {
       updateEventDto.status = StatusEvent.PROGRAMMED;
     } else {
       delete updateEventDto.status;
     }
 
     delete updateEventDto.userId;
+
+    if (updateEventDto.price && updateEventDto.price <= 0) throw new RpcException({
+      status: HttpStatus.CONFLICT,
+      message: `Price cannot be less or equal than zero`,
+      error: 'conflict_price_event'
+    });
 
     const eventNew = await this.event.update({
       data: updateEventDto,
@@ -244,7 +250,86 @@ export class EventService extends PrismaClient implements OnModuleInit {
     return eventNew;
   }
 
-  async remove(deletDto: DeleteDto) {
+  async updateStatus(updateStatusEvent: UpdateStatusEventDto) {
+    const { status, userId, eventId } = updateStatusEvent;
+
+    if (status == StatusEvent.PROGRAMMED) throw new RpcException({
+      status: HttpStatus.FORBIDDEN,
+      message: `Event cannot be PROGRAMMED`,
+      error: 'forbidden_status_event'
+    });
+
+    const event = await this.findOne(eventId);
+
+    if (event.userId != userId) throw new RpcException({
+      status: HttpStatus.FORBIDDEN,
+      message: `This user is not allowed to edit the event`,
+      error: 'forbidden_edit_event'
+    });
+
+    const now = new Date();
+    const eventDate = event.start_time;
+
+    if (status == StatusEvent.TODAY) {      
+      if (
+        eventDate.getDay() != now.getDay()
+        || eventDate.getFullYear() != now.getFullYear()
+        || eventDate.getMonth() != now.getMonth()
+      ) {
+        throw new RpcException({
+          status: HttpStatus.FORBIDDEN,
+          message: `Event is not TODAY`,
+          error: 'forbidden_status_event'
+        });
+      }
+    }
+
+    if (status == StatusEvent.NOW) {
+      if (
+        eventDate <= now
+        || event.status != StatusEvent.TODAY
+      ) {
+        throw new RpcException({
+          status: HttpStatus.FORBIDDEN,
+          message: `Event is not NOW`,
+          error: 'forbidden_status_event'
+        });
+      }
+    }
+    
+    if (status == StatusEvent.COMPLETED) {
+      if (
+        eventDate >= now 
+        || event.status != StatusEvent.NOW
+      ) {
+        throw new RpcException({
+          status: HttpStatus.FORBIDDEN,
+          message: `Event is not started`,
+          error: 'forbidden_status_event'
+        });
+      }
+    }
+
+    await this.event.update({
+      data: {
+        status: status
+      },
+      where: {
+        id: eventId
+      }
+    });
+
+    if (status == StatusEvent.COMPLETED) {
+      return { message: 'Finished event'}
+    } else if (status == StatusEvent.NOW) {
+      return { message: 'Started event'}
+    } else {
+      return { message: 'Event is today'}
+    }
+
+  }
+
+  async remove(deletDto: DeleteEventDto) {
     const { id, userId } = deletDto;
     const event = await this.findOne(id);
 
@@ -267,7 +352,7 @@ export class EventService extends PrismaClient implements OnModuleInit {
     const cards = await this.servCard.findAllCardsByEvent(id, { limit: 10, page: 1 });
 
 
-    if ( cards.data.length > 0 ) throw new RpcException({
+    if (cards.data.length > 0) throw new RpcException({
       status: HttpStatus.CONFLICT,
       message: `This event has cards sold.`,
       error: 'conflict_event_cards_sold'

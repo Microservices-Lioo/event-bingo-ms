@@ -20,6 +20,7 @@ model Event {
   userId      Int
   status      StatusEvent @default(PROGRAMMED)
   start_time  DateTime
+  price       Float
   award       Award[]
   card        Card[]
   createdAt   DateTime    @default(now())
@@ -46,7 +47,6 @@ model Card {
   event     Event    @relation(fields: [eventId], references: [id])
   eventId   Int
   nums      Json
-  price     Float
   available Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

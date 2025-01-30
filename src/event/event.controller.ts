@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { EventService } from './event.service';
-import { CreateEventDto, UpdateEventDto, DeleteDto } from './common';
+import { CreateEventDto, DeleteEventDto, UpdateEventDto, UpdateStatusEventDto } from './common';
 import { PaginationDto } from 'src/common';
 
 @Controller()
@@ -49,8 +49,13 @@ export class EventController {
     return this.eventService.update(updateEventDto.id, updateEventDto);
   }
 
+  @MessagePattern('updateStatusEvent')
+  updateStatus(@Payload() updateEventDto: UpdateStatusEventDto) {
+    return this.eventService.updateStatus(updateEventDto);
+  }
+
   @MessagePattern('removeEvent')
-  remove(@Payload() deletDto: DeleteDto) {
+  remove(@Payload() deletDto: DeleteEventDto) {
     return this.eventService.remove(deletDto);
   }
 }

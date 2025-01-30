@@ -26,6 +26,13 @@ export class CardsController {
     return this.cardsService.findAllCardsByEvent(eventId, paginationDto);
   }
 
+  @MessagePattern('countAllCardsByEvent')
+  countAllCardsByEvent(
+    @Payload() eventId: number
+  ) {
+    return this.cardsService.countAllCardsByEvent(eventId);
+  }
+
   @MessagePattern('updateAvailableCard')
   updateAvailable(
     @Payload() updateAvailableDto: UpdateAvailableDto

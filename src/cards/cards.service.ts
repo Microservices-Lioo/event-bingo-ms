@@ -112,6 +112,22 @@ export class CardsService extends PrismaClient implements OnModuleInit {
     }
   }
 
+  async countAllCardsByEvent(eventiId: number) {
+    const total = await this.card.count({
+      where: {
+        eventId: eventiId
+      }
+    });
+
+    const totalDisabled = await this.card.count({
+      where: {
+        eventId: eventiId,
+        available: false
+      }
+    });
+    return { total, disabled: totalDisabled};
+  }
+
   generateCard() {
     const card = [];
     const col1 = this.generateNumbersColm(1, 15, 5).sort((a, b) => a - b);

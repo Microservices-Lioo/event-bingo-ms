@@ -31,7 +31,7 @@ model Award {
   id          Int      @id @default(autoincrement())
   name        String
   description String
-  num_award   Int
+  num_award   Int?
   winner_user Int?
   gameId      Int?
   event       Event    @relation(fields: [eventId], references: [id])

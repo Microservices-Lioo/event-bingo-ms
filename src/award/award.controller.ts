@@ -14,9 +14,14 @@ export class AwardController {
     return this.awardService.create(createAwardDto, userId);
   }
 
-  @MessagePattern('findAllAward')
-  findAll() {
-    return this.awardService.findAll();
+  @MessagePattern('findAllByEventAward')
+  findAllByEvent(@Payload() eventId: number) {
+    return this.awardService.findAllByEvent(eventId);
+  }
+
+  @MessagePattern('findAllWinnersByEventAward')
+  findAllWinnersByEvent(@Payload() eventId: number) {
+    return this.awardService.findAllWinnersByEvent(eventId);
   }
 
   @MessagePattern('findOneAward')

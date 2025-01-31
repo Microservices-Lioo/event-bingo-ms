@@ -29,8 +29,26 @@ export class AwardService extends PrismaClient implements OnModuleInit {
     return award;
   }
 
-  findAll() {
-    return `This action returns all award`;
+  async findAllByEvent(eventId: number) {
+    const awards = await this.award.findMany({
+      where: {
+        eventId
+      }
+    });    
+    return awards;
+  }
+
+  async findAllWinnersByEvent(eventId: number) {
+    const awards = await this.award.findMany({
+      where: {
+        eventId
+      },
+      select: {
+        winner_user: true
+      }
+    });
+
+    return awards.map(a => a.winner_user);
   }
 
   findOne(id: number) {

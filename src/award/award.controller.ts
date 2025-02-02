@@ -31,7 +31,7 @@ export class AwardController {
 
   @MessagePattern('updateAward')
   update(@Payload() updateAwardDto: UpdateAwardDto) {
-    return this.awardService.update(updateAwardDto.id, updateAwardDto);
+    return this.awardService.update(updateAwardDto);
   }
 
   @MessagePattern('removeAward')

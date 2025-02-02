@@ -1,8 +1,9 @@
-import { forwardRef, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { forwardRef, HttpStatus, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { CreateAwardDto } from './dto/create-award.dto';
 import { UpdateAwardDto } from './dto/update-award.dto';
 import { PrismaClient } from '@prisma/client';
 import { EventService } from 'src/event/event.service';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class AwardService extends PrismaClient implements OnModuleInit {
@@ -51,12 +52,40 @@ export class AwardService extends PrismaClient implements OnModuleInit {
     return awards.map(a => a.winner_user);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} award`;
+  async findOne(id: number) {
+    const award = await this.award.findFirst({
+      where: {
+        id
+      }
+    });
+
+    if (!award) throw new RpcException({
+      status: HttpStatus.NOT_FOUND,
+      message: `Award with id #${id} not found`,
+    });
+
+    return award;
   }
 
-  update(id: number, updateAwardDto: UpdateAwardDto) {
-    return `This action updates a #${id} award`;
+  async update(updateAwardDto: UpdateAwardDto) {
+    const { id, ...data } = updateAwardDto;
+
+    const awardOld = await this.findOne(id);
+
+    if (!data.eventId || awardOld.eventId != data.eventId) throw new RpcException({
+      status: HttpStatus.CONFLICT,
+      message: `The award does not belong to this event`,
+      error: 'conflict_eventid_award'
+    });
+
+    const award = await this.award.update({
+      data: data,
+      where: {
+        id
+      }
+    });
+
+    return award;
   }
 
   remove(id: number) {

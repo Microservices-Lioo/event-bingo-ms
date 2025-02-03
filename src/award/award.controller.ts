@@ -36,6 +36,7 @@ export class AwardController {
 
   @MessagePattern('removeAward')
   remove(@Payload() id: number) {
+    console.log(id)
     return this.awardService.remove(id);
   }
 }

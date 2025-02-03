@@ -88,7 +88,21 @@ export class AwardService extends PrismaClient implements OnModuleInit {
     return award;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} award`;
+  async remove(id: number) {
+    const award = await this.findOne(id);
+
+    if (award.gameId != null || award.num_award != null || award.winner_user != null ) throw new RpcException({
+      status: HttpStatus.CONFLICT,
+      message: `This award is already won`,
+      error: 'confict_won_award'
+    });
+    
+    await this.award.delete({
+      where: {
+        id
+      }
+    });
+
+    return id;
   }
 }

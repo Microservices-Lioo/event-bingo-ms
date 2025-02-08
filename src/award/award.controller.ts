@@ -14,6 +14,12 @@ export class AwardController {
     return this.awardService.create(createAwardDto, userId);
   }
 
+  @MessagePattern('createMultiAward')
+  createMulti(@Payload() payload: { createAwardDto: CreateAwardDto[], userId: number}) {
+    const { createAwardDto, userId } = payload;
+    return this.awardService.createMulti(createAwardDto, userId);
+  }
+
   @MessagePattern('findAllByEventAward')
   findAllByEvent(@Payload() eventId: number) {
     return this.awardService.findAllByEvent(eventId);

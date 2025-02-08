@@ -30,6 +30,17 @@ export class AwardService extends PrismaClient implements OnModuleInit {
     return award;
   }
 
+  async createMulti(createAwardDto: CreateAwardDto[], userId: number) {
+    
+    await this.eventServ.findByUser(userId, createAwardDto[0].eventId);
+    
+    const award = await this.award.createMany({
+      data: createAwardDto
+    });
+
+    return award;
+  }
+
   async findAllByEvent(eventId: number) {
     const awards = await this.award.findMany({
       where: {

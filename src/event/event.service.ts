@@ -180,6 +180,36 @@ export class EventService extends PrismaClient implements OnModuleInit {
     }
   }
 
+  async findAllByUserWithAwards(id: number, paginationDto: PaginationDto) {
+    const { page, limit } = paginationDto;
+
+    const total = await this.event.count({
+      where: {
+        userId: id
+      }
+    });
+
+    const lastPage = Math.ceil(total / limit);
+
+    return {
+      data: await this.event.findMany({
+        where: {
+          userId: id
+        },
+        include: {
+          award: true
+        },
+        skip: (page - 1) * limit,
+        take: limit
+      }),
+      meta: {
+        total,
+        page,
+        lastPage
+      }
+    }
+  }
+
   async findByUser(userId: number, eventId: number) {
     const event = await this.event.findFirst({
       where: {

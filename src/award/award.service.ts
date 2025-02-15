@@ -116,4 +116,21 @@ export class AwardService extends PrismaClient implements OnModuleInit {
 
     return id;
   }
+
+  async removeByEventId(id: number) {
+    const awards = await this.award.findMany({
+      where: {
+        eventId: id
+      }
+    });
+
+    if (awards.length === -1) {
+      return ;
+    }
+
+    awards.forEach(async (award) => {
+      await this.remove(award.id);
+    });
+
+  }
 }

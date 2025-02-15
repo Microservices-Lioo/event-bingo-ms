@@ -5,6 +5,7 @@ import { RpcException } from '@nestjs/microservices';
 import { StatusEvent } from './common';
 import { PaginationDto } from 'src/common';
 import { CardsService } from 'src/cards/cards.service';
+import { AwardService } from 'src/award/award.service';
 
 @Injectable()
 export class EventService extends PrismaClient implements OnModuleInit {
@@ -17,7 +18,10 @@ export class EventService extends PrismaClient implements OnModuleInit {
 
   constructor(
     @Inject(forwardRef(() => CardsService))
-    private readonly servCard: CardsService) {
+    private readonly servCard: CardsService,
+    @Inject(forwardRef(() => AwardService))
+    private readonly servAward: AwardService,
+  ) {
     super();
   }
 
@@ -381,13 +385,13 @@ export class EventService extends PrismaClient implements OnModuleInit {
 
     const cards = await this.servCard.findAllCardsByEvent(id, { limit: 10, page: 1 });
 
-
     if (cards.data.length > 0) throw new RpcException({
       status: HttpStatus.CONFLICT,
       message: `This event has cards sold.`,
       error: 'conflict_event_cards_sold'
     });
 
+    await this.servAward.removeByEventId(event.id);
 
     await this.event.delete({
       where: { id: id },

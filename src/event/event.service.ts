@@ -33,94 +33,69 @@ export class EventService extends PrismaClient implements OnModuleInit {
     return event;
   }
 
-  async findAllToday(paginationDto: PaginationDto) {
-    const { page, limit } = paginationDto;
+  async findAllStatus(payload: { pagination: PaginationDto, status: StatusEvent }) {
+    const { pagination, status } = payload;
 
     const total = await this.event.count({
       where: {
         status: {
-          equals: StatusEvent.TODAY
+          equals: status
         }
       }
     });
 
-    const lastPage = Math.ceil(total / limit);
+    const lastPage = Math.ceil(total / pagination.limit);
 
     return {
       data: await this.event.findMany({
         where: {
           status: {
-            equals: StatusEvent.TODAY
+            equals: status
           }
         },
-        skip: (page - 1) * limit,
-        take: limit
+        skip: (pagination.page - 1) * pagination.limit,
+        take: pagination.limit
       }),
       meta: {
         total,
-        page,
+        page: pagination.page,
         lastPage
       }
     }
   }
 
-  async findAllNow(paginationDto: PaginationDto) {
-    const { page, limit } = paginationDto;
+  async findAllByUserStatus(payload: { pagination: PaginationDto, status: StatusEvent, userId: number }) {
+    const { pagination, status, userId } = payload;
 
     const total = await this.event.count({
       where: {
         status: {
-          equals: StatusEvent.NOW
+          equals: status,        
+        },
+        userId: {
+          equals: userId
         }
       }
     });
 
-    const lastPage = Math.ceil(total / limit);
+    const lastPage = Math.ceil(total / pagination.limit);
 
     return {
       data: await this.event.findMany({
         where: {
           status: {
-            equals: StatusEvent.NOW
+            equals: status
+          },
+          userId: {
+            equals: userId
           }
         },
-        skip: (page - 1) * limit,
-        take: limit
+        skip: (pagination.page - 1) * pagination.limit,
+        take: pagination.limit
       }),
       meta: {
         total,
-        page,
-        lastPage
-      }
-    }
-  }
-
-  async findAllProgrammed(paginationDto: PaginationDto) {
-    const { page, limit } = paginationDto;
-
-    const total = await this.event.count({
-      where: {
-        status: {
-          equals: StatusEvent.PROGRAMMED
-        }
-      }
-    });
-
-    const lastPage = Math.ceil(total / limit);
-
-    return {
-      data: await this.event.findMany({
-        where: {
-          status: {
-            equals: StatusEvent.PROGRAMMED
-          }
-        },
-        skip: (page - 1) * limit,
-        take: limit
-      }),
-      meta: {
-        total,
-        page,
+        page: pagination.page,
         lastPage
       }
     }

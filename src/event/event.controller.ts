@@ -1,3 +1,4 @@
+import { StatusEvent } from './common/enums/status.enum';
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { EventService } from './event.service';
@@ -13,19 +14,15 @@ export class EventController {
     return this.eventService.create(createEventDto);
   }
 
-  @MessagePattern('findAllNowEvent')
-  findAllNow(@Payload() pagination: PaginationDto) {
-    return this.eventService.findAllNow(pagination);
+  @MessagePattern('findAllStatusEvent')
+  findAllStatus(@Payload() payload: { pagination: PaginationDto, status: StatusEvent }) {
+    return this.eventService.findAllStatus(payload);
   }
 
-  @MessagePattern('findAllTodayEvent')
-  findAllToday(@Payload() pagination: PaginationDto) {
-    return this.eventService.findAllToday(pagination);
-  }
-
-  @MessagePattern('findAllProgrammedEvent')
-  findAllProgrammed(@Payload() pagination: PaginationDto) {
-    return this.eventService.findAllProgrammed(pagination);
+  @MessagePattern('findAllByUserStatusEvent')
+  findAllByUserStatus(
+    @Payload() payload: { pagination: PaginationDto, status: StatusEvent, userId: number }) {
+    return this.eventService.findAllByUserStatus(payload);
   }
 
   @MessagePattern('findAllEvent')

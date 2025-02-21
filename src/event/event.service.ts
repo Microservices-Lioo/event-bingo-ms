@@ -71,27 +71,45 @@ export class EventService extends PrismaClient implements OnModuleInit {
       where: {
         status: {
           equals: status,        
-        },
-        userId: {
-          equals: userId
         }
-      }
+      },      
     });
 
     const lastPage = Math.ceil(total / pagination.limit);
+    const data = await this.event.findMany({
+      relationLoadStrategy: 'join',
+      include: {
+        card: {
+          select: {
+            buyer: true
+          }
+        }
+      },
+      where: {
+        status: {
+          equals: status
+        },
+      },
+      skip: (pagination.page - 1) * pagination.limit,
+      take: pagination.limit
+    });
+
 
     return {
-      data: await this.event.findMany({
-        where: {
-          status: {
-            equals: status
-          },
-          userId: {
-            equals: userId
+      data: data.map((event) => {
+        const isBuyer = event.card.find((card) => card.buyer === userId)
+        const { card, ...eventData } = event;
+        if (isBuyer) {
+          return {
+            ...eventData,
+            buyer: true
           }
-        },
-        skip: (pagination.page - 1) * pagination.limit,
-        take: pagination.limit
+        } else {
+          return {
+            ...eventData,
+            buyer: false
+          }
+        }
       }),
       meta: {
         total,

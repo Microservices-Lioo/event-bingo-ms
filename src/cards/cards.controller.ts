@@ -1,8 +1,8 @@
 import { Controller, ParseIntPipe } from '@nestjs/common';
 import { CardsService } from './cards.service';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { PaginationDto } from 'src/common';
-import { CreateCardDto, UpdateAvailableDto } from './dto';
+import { CreateCardDto, CreateManyCardDto, UpdateAvailableDto } from './dto';
 
 @Controller('cards')
 export class CardsController {
@@ -11,6 +11,13 @@ export class CardsController {
   @MessagePattern('createCard')
   create(@Payload() createCardDto: CreateCardDto) {
     return this.cardsService.create(createCardDto);
+  }
+
+  @MessagePattern('createManyCard')
+  createManyCards(
+    @Payload() createManyCardDto: CreateManyCardDto,
+  ) {
+    return this.cardsService.createMany(createManyCardDto);
   }
   
   @MessagePattern('findOneCard')

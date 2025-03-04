@@ -5,6 +5,7 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import { RpcException } from '@nestjs/microservices';
 import { PaginationDto } from 'src/common';
 import { EventService } from 'src/event/event.service';
+import { CreateManyCardDto } from './dto/create-many-card.dto';
 
 @Injectable()
 export class CardsService extends PrismaClient implements OnModuleInit {
@@ -24,9 +25,61 @@ export class CardsService extends PrismaClient implements OnModuleInit {
 
   async create(createCardDto: CreateCardDto) {
     const { buyer, eventId } = createCardDto;
-    let card_nums: any[];
-    let existCard = null;
-    let numCard = 0;
+    try {
+      let card_nums: any[];
+      let existCard = null;
+      let numCard = 0;
+
+      const event = await this.eventServ.findOne(eventId);
+
+      if (event.userId == buyer) throw new RpcException({
+        status: HttpStatus.FORBIDDEN,
+        message: `You cannot participate in your own event.`,
+        error: 'forbidden_participate_event'
+      });
+
+      do {
+        card_nums = [];
+        card_nums = this.generateCard() as Prisma.JsonArray;
+
+        existCard = await this.card.findFirst({
+          where: {
+            eventId: eventId,
+            nums: {
+              equals: card_nums
+            }
+          }
+        });
+
+      } while (existCard !== null);
+
+      const numsCards = await this.card.count({
+        where: {
+          eventId: eventId
+        }
+      });
+
+      numCard = numsCards + 1;
+
+      return await this.card.create({
+        data: {
+          buyer: buyer,
+          eventId: eventId,
+          num: numCard,
+          nums: card_nums
+        }
+      });
+    }  catch (error) {
+        throw new RpcException({
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: `Internal server error, try again.`,
+          error: 'create_card'
+        });
+      }
+  }
+
+  async createMany(createManyCardDto: CreateManyCardDto) {
+    const { buyer, eventId, totalItems } = createManyCardDto;    
 
     const event = await this.eventServ.findOne(eventId);
 
@@ -36,37 +89,51 @@ export class CardsService extends PrismaClient implements OnModuleInit {
       error: 'forbidden_participate_event'
     });
 
-    do {
-      card_nums = [];
-      card_nums = this.generateCard() as Prisma.JsonArray;
-
-      existCard = await this.card.findFirst({
-        where: {
-          eventId: eventId,
-          nums: {
-            equals: card_nums
+    for(let i = 0; i < totalItems; i++) {
+      let card_nums: any[];
+      let existCard = null;
+      let numCard = 0;
+      try {
+        do {
+          card_nums = [];
+          card_nums = this.generateCard() as Prisma.JsonArray;
+    
+          existCard = await this.card.findFirst({
+            where: {
+              eventId: eventId,
+              nums: {
+                equals: card_nums
+              }
+            }
+          });
+    
+        } while (existCard !== null);
+    
+        const numsCards = await this.card.count({
+          where: {
+            eventId: eventId
           }
-        }
-      });
-
-    } while (existCard !== null);
-
-    const numsCards = await this.card.count({
-      where: {
-        eventId: eventId
+        });
+    
+        numCard = numsCards + 1;
+    
+        await this.card.create({
+          data: {
+            buyer: buyer,
+            eventId: eventId,
+            num: numCard,
+            nums: card_nums
+          }
+        });
+      } catch (error) {
+        throw new RpcException({
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: `Internal server error, try again.`,
+          error: 'create_many_card'
+        });
       }
-    });
-
-    numCard = numsCards + 1;
-
-    return this.card.create({
-      data: {
-        buyer: buyer,
-        eventId: eventId,
-        num: numCard,
-        nums: card_nums
-      }
-    });
+    }
+    
   }
 
   async findOne(id: number) {

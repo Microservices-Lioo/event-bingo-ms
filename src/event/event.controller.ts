@@ -47,6 +47,11 @@ export class EventController {
     return this.eventService.findOne(id);
   }
 
+  @MessagePattern('findOneWithAwardEvent')
+  findOneWithAward(@Payload() eventId: number) {
+    return this.eventService.findOneWithAward(eventId);
+  }
+
   @MessagePattern('updateEvent')
   update(@Payload() updateEventDto: UpdateEventDto) {
     return this.eventService.update(updateEventDto.id, updateEventDto);

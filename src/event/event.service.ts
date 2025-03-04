@@ -238,6 +238,24 @@ export class EventService extends PrismaClient implements OnModuleInit {
     return event;
   }
 
+  async findOneWithAward(eventId: number) {
+    const event = await this.event.findFirst({
+      include: {
+        award: true
+      },
+      where: {
+        id: eventId
+      }
+    });
+
+    if (!event) throw new RpcException({
+      status: HttpStatus.NOT_FOUND,
+      message: `This event with id #${eventId} not found`
+    });
+
+    return event;
+  }
+
   async update(id: number, updateEventDto: UpdateEventDto) {
 
     const event = await this.findOne(id);

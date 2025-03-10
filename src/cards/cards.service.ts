@@ -258,4 +258,23 @@ export class CardsService extends PrismaClient implements OnModuleInit {
     })
     return true;
   }
+
+  async getCardCountForUserAndEvent(card: { buyer: number, eventId: number }) {
+    const { buyer, eventId } = card;
+    try {
+      const total = await this.card.count({
+        where: {
+          buyer, eventId
+        }
+      });
+  
+      return total;
+    } catch (error) {
+      throw new RpcException({
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Error when trying to get the number of cards of the user in an event.',
+        error: error
+      })
+    }
+  }
 }

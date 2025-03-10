@@ -46,4 +46,12 @@ export class CardsController {
   ) {
     return this.cardsService.updateAvailable(updateAvailableDto);
   }
+
+  @MessagePattern('getCardCountForUserAndEvent')
+  getCardCountForUserAndEvent(
+    @Payload() payload: { buyer: number, eventId: number }
+  ) {
+    return this.cardsService.getCardCountForUserAndEvent(payload);
+  }
+
 }

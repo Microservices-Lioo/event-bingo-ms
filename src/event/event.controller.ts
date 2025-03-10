@@ -66,4 +66,10 @@ export class EventController {
   remove(@Payload() deletDto: DeleteEventDto) {
     return this.eventService.remove(deletDto);
   }
+
+  @MessagePattern('findByUserEvent')
+  findByUserEvent( @Payload() payload: { eventId: number, userId: number }) {
+    const { eventId, userId } = payload;
+    return this.eventService.findByUserEvent(eventId, userId);
+  }
 }

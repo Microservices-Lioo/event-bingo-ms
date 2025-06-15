@@ -72,4 +72,10 @@ export class EventController {
     const { eventId, userId } = payload;
     return this.eventService.findByUserEvent(eventId, userId);
   }
+
+  @MessagePattern('findByUserRoleEvent')
+  findByUserRoleEvent( @Payload() payload: { eventId: number, userId: number }) {
+    const { eventId, userId } = payload;
+    return this.eventService.findByUserRoleEvent(eventId, userId);
+  }
 }

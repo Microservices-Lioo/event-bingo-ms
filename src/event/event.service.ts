@@ -430,4 +430,19 @@ export class EventService extends PrismaClient implements OnModuleInit {
 
     return event;
   }
+
+  async findByUserRoleEvent(eventId: number, userId: number ) {
+    const event = await this.event.findFirst({
+      where: {
+        id: eventId,
+        userId: userId
+      }
+    });
+
+    if (!event) {
+      return false;
+    }
+
+    return true;
+  }
 }

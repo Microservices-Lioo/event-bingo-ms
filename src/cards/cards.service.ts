@@ -1,11 +1,12 @@
 
-import { forwardRef, HttpStatus, Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { forwardRef, HttpStatus, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { CreateCardDto, UpdateAvailableDto } from './dto';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { RpcException } from '@nestjs/microservices';
 import { PaginationDto } from 'src/common';
 import { EventService } from 'src/event/event.service';
 import { CreateManyCardDto } from './dto/create-many-card.dto';
+import { CreateOrderItem } from 'src/shared';
 
 @Injectable()
 export class CardsService extends PrismaClient implements OnModuleInit {
@@ -79,8 +80,10 @@ export class CardsService extends PrismaClient implements OnModuleInit {
   }
 
   async createMany(createManyCardDto: CreateManyCardDto) {
-    const { buyer, eventId, totalItems } = createManyCardDto;    
-
+    const { orderId, buyer, eventId, totalItems } = createManyCardDto;    
+    let cardOrderItem: CreateOrderItem;
+    let cardsOrderItemArray: CreateOrderItem[] = [];
+    
     const event = await this.eventServ.findOne(eventId);
 
     if (event.userId == buyer) throw new RpcException({
@@ -117,7 +120,7 @@ export class CardsService extends PrismaClient implements OnModuleInit {
     
         numCard = numsCards + 1;
     
-        await this.card.create({
+        const card = await this.card.create({
           data: {
             buyer: buyer,
             eventId: eventId,
@@ -125,6 +128,13 @@ export class CardsService extends PrismaClient implements OnModuleInit {
             nums: card_nums
           }
         });
+
+        if (totalItems > 1) {
+          cardsOrderItemArray.push({ orderId, cardId: card.id, priceUnit: event.price, quantity: 1 });
+        } else {
+          cardOrderItem = { orderId, cardId: card.id, priceUnit: event.price, quantity: 1 };
+        }
+
       } catch (error) {
         throw new RpcException({
           status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -133,7 +143,11 @@ export class CardsService extends PrismaClient implements OnModuleInit {
         });
       }
     }
-    
+    if (cardsOrderItemArray.length === 0 ) {
+      return cardOrderItem;
+    } else {
+      return cardsOrderItemArray;
+    }
   }
 
   async findOne(id: number) {

@@ -1,6 +1,6 @@
 import { Controller, ParseIntPipe } from '@nestjs/common';
 import { CardsService } from './cards.service';
-import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PaginationDto } from 'src/common';
 import { CreateCardDto, CreateManyCardDto, UpdateAvailableDto } from './dto';
 

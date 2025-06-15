@@ -4,6 +4,10 @@ export class CreateManyCardDto {
 
     @IsNumber()
     @IsPositive()
+    orderId: number;
+
+    @IsNumber()
+    @IsPositive()
     eventId: number;
 
     @IsNumber()

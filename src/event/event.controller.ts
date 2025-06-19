@@ -2,7 +2,12 @@ import { StatusEvent } from './common/enums/status.enum';
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { EventService } from './event.service';
-import { CreateEventDto, DeleteEventDto, UpdateEventDto, UpdateStatusEventDto } from './common';
+import { 
+  CreateEventDto, 
+  DeleteEventDto, 
+  UpdateEventDto, 
+  UpdateStatusEventDto 
+} from './common';
 import { PaginationDto } from 'src/common';
 
 @Controller()
@@ -77,5 +82,16 @@ export class EventController {
   findByUserRoleEvent( @Payload() payload: { eventId: number, userId: number }) {
     const { eventId, userId } = payload;
     return this.eventService.findByUserRoleEvent(eventId, userId);
+  }
+
+  // WebSocket
+  @MessagePattern('verifyAParticipatingUserEvent')
+  verifyAParticipatingUserEvent( @Payload() payload: { eventId: number, userId: number }) {
+    return this.eventService.verifyAParticipatingUserEvent(payload);
+  }
+
+  @MessagePattern('findOneEventWS')
+  findOneWs(@Payload() id: number) {
+    return this.eventService.findOneWs(id);
   }
 }

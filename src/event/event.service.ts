@@ -1,5 +1,17 @@
-import { forwardRef, HttpStatus, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { CreateEventDto, UpdateEventDto, DeleteEventDto, UpdateStatusEventDto } from './common';
+import { 
+  forwardRef, 
+  HttpStatus, 
+  Inject, 
+  Injectable, 
+  Logger, 
+  OnModuleInit 
+} from '@nestjs/common';
+import { 
+  CreateEventDto, 
+  UpdateEventDto, 
+  DeleteEventDto, 
+  UpdateStatusEventDto 
+} from './common';
 import { PrismaClient } from '@prisma/client';
 import { RpcException } from '@nestjs/microservices';
 import { StatusEvent } from './common';
@@ -444,5 +456,31 @@ export class EventService extends PrismaClient implements OnModuleInit {
     }
 
     return true;
+  }
+
+  // WebSocket
+  async verifyAParticipatingUserEvent(payload: { eventId: number, userId: number }) {
+    const { eventId, userId } = payload;
+    const event = await this.findOneWs(eventId);
+
+    if (event && event.userId == userId) {
+      return true;
+    } else {
+      return await this.servCard.buyerEventExists(eventId, userId);
+    }
+  }
+
+  async findOneWs(id: number) {
+    const event = await this.event.findFirst({
+      where: {
+        id
+      }
+    });
+
+    if (!event) {
+      return null;
+    };
+
+    return event;
   }
 }

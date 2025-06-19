@@ -1,5 +1,12 @@
 
-import { forwardRef, HttpStatus, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { 
+  forwardRef, 
+  HttpStatus, 
+  Inject, 
+  Injectable, 
+  Logger, 
+  OnModuleInit 
+} from '@nestjs/common';
 import { CreateCardDto, UpdateAvailableDto } from './dto';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { RpcException } from '@nestjs/microservices';
@@ -290,5 +297,20 @@ export class CardsService extends PrismaClient implements OnModuleInit {
         error: error
       })
     }
+  }
+
+  async buyerEventExists(eventId: number, buyer: number): Promise<boolean> {
+    const card = await this.card.findFirst({
+      where: {
+        buyer,
+        eventId
+      }
+    });
+
+    if (!card) {
+      return false;
+    }
+
+    return true;
   }
 }

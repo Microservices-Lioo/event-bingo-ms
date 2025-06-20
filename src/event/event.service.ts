@@ -18,6 +18,7 @@ import { StatusEvent } from './common';
 import { PaginationDto } from 'src/common';
 import { CardsService } from 'src/cards/cards.service';
 import { AwardService } from 'src/award/award.service';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class EventService extends PrismaClient implements OnModuleInit {
@@ -33,6 +34,7 @@ export class EventService extends PrismaClient implements OnModuleInit {
     private readonly servCard: CardsService,
     @Inject(forwardRef(() => AwardService))
     private readonly servAward: AwardService,
+    private readonly redisServ: RedisService
   ) {
     super();
   }
@@ -284,7 +286,7 @@ export class EventService extends PrismaClient implements OnModuleInit {
       error: 'forbidden_edit_event'
     });
 
-    if (updateEventDto.start_time) {
+    if (updateEventDto.status) {
       updateEventDto.status = StatusEvent.PROGRAMMED;
     } else {
       delete updateEventDto.status;
@@ -325,13 +327,13 @@ export class EventService extends PrismaClient implements OnModuleInit {
     });
 
     const now = new Date();
-    const eventDate = event.start_time;
-
+    const eventDate = event.time;
+    
     if (status == StatusEvent.TODAY) {      
       if (
-        eventDate.getDay() != now.getDay()
-        || eventDate.getFullYear() != now.getFullYear()
-        || eventDate.getMonth() != now.getMonth()
+        eventDate.getUTCDate() != now.getUTCDate()
+        || eventDate.getUTCFullYear() != now.getUTCFullYear()
+        || eventDate.getUTCMonth() != now.getUTCMonth()
       ) {
         throw new RpcException({
           status: HttpStatus.FORBIDDEN,
@@ -343,7 +345,7 @@ export class EventService extends PrismaClient implements OnModuleInit {
 
     if (status == StatusEvent.NOW) {
       if (
-        eventDate <= now
+        eventDate.toISOString() > now.toISOString()
         || event.status != StatusEvent.TODAY
       ) {
         throw new RpcException({
@@ -369,7 +371,8 @@ export class EventService extends PrismaClient implements OnModuleInit {
 
     await this.event.update({
       data: {
-        status: status
+        status: status,
+        start_time: status === StatusEvent.NOW ? now : undefined
       },
       where: {
         id: eventId
@@ -377,11 +380,11 @@ export class EventService extends PrismaClient implements OnModuleInit {
     });
 
     if (status == StatusEvent.COMPLETED) {
-      return { message: 'Finished event'}
+      return { status: StatusEvent.COMPLETED, message: 'Finished event' }
     } else if (status == StatusEvent.NOW) {
-      return { message: 'Started event'}
+      return { status: StatusEvent.NOW, message: 'Started event' }
     } else {
-      return { message: 'Event is today'}
+      return { status: StatusEvent.TODAY, message: 'Event is today' }
     }
 
   }
@@ -424,6 +427,14 @@ export class EventService extends PrismaClient implements OnModuleInit {
   }
 
   async findByUserEvent(eventId: number, userId: number) {
+    const key = `event:${eventId}:${userId}`;
+
+    const cachedEvent = await this.redisServ.get(key);
+
+    if (cachedEvent) {
+      return JSON.parse(cachedEvent);
+    }
+
     const event = await this.event.findFirst({
       where: {
         id: eventId,
@@ -439,6 +450,8 @@ export class EventService extends PrismaClient implements OnModuleInit {
       message: `This event with user no found`,
       error: 'findByUserEvent'
     });
+
+    await this.redisServ.set(key, JSON.stringify(event), 1800)
 
     return event;
   }
@@ -471,6 +484,14 @@ export class EventService extends PrismaClient implements OnModuleInit {
   }
 
   async findOneWs(id: number) {
+    const key = `event:${id}`;
+
+    const cachedEvent = await this.redisServ.get(key);
+
+    if (cachedEvent) {
+      return JSON.parse(cachedEvent);
+    }
+
     const event = await this.event.findFirst({
       where: {
         id
@@ -480,6 +501,8 @@ export class EventService extends PrismaClient implements OnModuleInit {
     if (!event) {
       return null;
     };
+
+    await this.redisServ.set(key, JSON.stringify(event), 1800);
 
     return event;
   }

@@ -14,6 +14,7 @@ import { PaginationDto } from 'src/common';
 import { EventService } from 'src/event/event.service';
 import { CreateManyCardDto } from './dto/create-many-card.dto';
 import { CreateOrderItem } from 'src/shared';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class CardsService extends PrismaClient implements OnModuleInit {
@@ -22,7 +23,9 @@ export class CardsService extends PrismaClient implements OnModuleInit {
 
   constructor(
     @Inject(forwardRef(() => EventService))
-    private readonly eventServ: EventService) {
+    private readonly eventServ: EventService,
+    private readonly redisServ: RedisService
+  ) {
     super();
   }
 
@@ -300,6 +303,14 @@ export class CardsService extends PrismaClient implements OnModuleInit {
   }
 
   async buyerEventExists(eventId: number, buyer: number): Promise<boolean> {
+    const key = `card:event:${eventId}:${buyer}:exist`;
+
+    const cachedEvent = await this.redisServ.get(key);
+
+    if (cachedEvent) {
+      return true;
+    }
+
     const card = await this.card.findFirst({
       where: {
         buyer,
@@ -310,6 +321,8 @@ export class CardsService extends PrismaClient implements OnModuleInit {
     if (!card) {
       return false;
     }
+
+    await this.redisServ.set(key, JSON.stringify(true), 1800);
 
     return true;
   }

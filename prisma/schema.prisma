@@ -1,11 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["relationJoins"]
 }
 
@@ -20,12 +14,14 @@ model Event {
   description String
   userId      Int
   status      StatusEvent @default(PROGRAMMED)
-  start_time  DateTime
-  price       Float
-  award       Award[]
-  card        Card[]
+  start_time  DateTime?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+  price       Float
+  end_time    DateTime?
+  time        DateTime
+  award       Award[]
+  card        Card[]
 }
 
 model Award {
@@ -35,22 +31,22 @@ model Award {
   num_award   Int?
   winner_user Int?
   gameId      Int?
-  event       Event    @relation(fields: [eventId], references: [id])
   eventId     Int
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  event       Event    @relation(fields: [eventId], references: [id])
 }
 
 model Card {
   id        Int      @id @default(autoincrement())
   num       Int
   buyer     Int
-  event     Event    @relation(fields: [eventId], references: [id])
   eventId   Int
-  nums      Json
   available Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  nums      Json
+  event     Event    @relation(fields: [eventId], references: [id])
 
   @@index([available])
 }

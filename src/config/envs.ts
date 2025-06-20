@@ -7,10 +7,8 @@ interface EnvVar {
     POSTGRES_USER: string;
     POSTGRES_PASSWORD: string;
     POSTGRES_DB: string;
-    // JWT_SECRET: string;
-    // JWT_EXPIRATION: string;    
-    // JWT_REFRESH_SECRET: string;
-    // JWT_REFRESH_EXPIRATION: string;
+    REDIS_HOST: string;
+    REDIS_PORT: number;
 }
 
 export const envs: EnvVar = {
@@ -19,8 +17,6 @@ export const envs: EnvVar = {
     POSTGRES_USER: env.get('POSTGRES_USER').required().asString(),
     POSTGRES_PASSWORD: env.get('POSTGRES_PASSWORD').required().asString(),
     POSTGRES_DB: env.get('POSTGRES_DB').required().asString(),
-    // JWT_SECRET: env.get('JWT_SECRET').required().asString(),
-    // JWT_EXPIRATION: env.get('JWT_EXPIRATION').required().asString(),
-    // JWT_REFRESH_SECRET: env.get('JWT_REFRESH_SECRET').required().asString(),
-    // JWT_REFRESH_EXPIRATION: env.get('JWT_REFRESH_EXPIRATION').required().asString(),
+    REDIS_HOST: env.get('REDIS_HOST').required().asString(),
+    REDIS_PORT: env.get('REDIS_PORT').required().asPortNumber(),
 }

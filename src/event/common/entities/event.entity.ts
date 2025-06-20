@@ -6,6 +6,8 @@ export class Event {
     description: string;
     userId: number;
     status: StatusEvent;
-    start_time: string;
+    time: Date;
+    start_time: Date;
+    end_time: Date;
     val_cart: string;
 }

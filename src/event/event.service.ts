@@ -506,4 +506,21 @@ export class EventService extends PrismaClient implements OnModuleInit {
 
     return event;
   }
+
+  // Redis
+  async joinRoom(key: string, data: { userId: number, socketId: string }) {
+    await this.redisServ.hset(key, data)
+  }
+  
+  async countUsersRoom(key: string) {
+    return await this.redisServ.hlen(key);
+  }
+
+  async moveToRoom(keyOrigin: string, keyDestination: string) {
+    return await this.redisServ.moveRoom(keyOrigin, keyDestination);
+  }
+  
+  async deleteRoom(key: string) {
+    return await this.redisServ.delete(key);
+  }
 }

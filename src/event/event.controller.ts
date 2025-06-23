@@ -118,4 +118,11 @@ export class EventController {
   deleteRoom(@Payload() key: string) {
     return this.eventService.deleteRoom(key);
   }
+
+  @MessagePattern('deleteUserRoom')
+  deleteUserRoom(
+    @Payload() payload: {userId: number, socketId: string}
+  ): Promise<string | null> {
+    return this.eventService.deleteUserRoom(payload);
+  }
 }

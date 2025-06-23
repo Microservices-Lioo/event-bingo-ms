@@ -523,4 +523,10 @@ export class EventService extends PrismaClient implements OnModuleInit {
   async deleteRoom(key: string) {
     return await this.redisServ.delete(key);
   }
+
+  async deleteUserRoom(
+    payload: {userId: number, socketId: string}
+  ): Promise<string | null> {
+    return await this.redisServ.deleteUserRoom(payload);
+  }
 }

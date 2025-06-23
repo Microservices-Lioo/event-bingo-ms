@@ -36,7 +36,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         } else {
             await this.client.hset(key, otp.userId, data);
         }
-        
+        await this.client.hset(`sockets:${otp.socketId}`, 'socketId', otp.socketId, 'key', key);
     }
 
     async find(key: string, userId: number) {
@@ -63,5 +63,15 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         return true;
     }
 
+    async deleteUserRoom(payload: {userId: number, socketId: string}) {
+        const { socketId: socket, userId } = payload;
+        const { socketId, key } = await this.client.hgetall(`sockets:${socket}`);
+        if (key && socketId) {
+            await this.client.hdel(key, userId.toString());
+            await this.delete(`sockets:${socketId}`);
+            return key;
+        }
+        return null;
+    }
 
 }

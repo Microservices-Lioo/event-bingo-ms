@@ -106,14 +106,6 @@ export class EventController {
     return this.eventService.countUsersRoom(key);
   }
 
-  @MessagePattern('moveToRoom')
-  moveToRoom(
-    @Payload('origin') keyOrigin: string, 
-    @Payload('destination') keyDestination: string
-  ) {
-    return this.eventService.moveToRoom(keyOrigin, keyDestination);
-  }
-
   @MessagePattern('deleteRoom')
   deleteRoom(@Payload() key: string) {
     return this.eventService.deleteRoom(key);

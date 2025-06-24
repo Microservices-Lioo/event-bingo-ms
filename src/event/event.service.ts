@@ -271,7 +271,7 @@ export class EventService extends PrismaClient implements OnModuleInit {
   }
 
   async update(id: number, updateEventDto: UpdateEventDto) {
-
+    const key = `event:${id}`;
     const event = await this.findOne(id);
 
     if (event.status == StatusEvent.COMPLETED) throw new RpcException({
@@ -305,12 +305,17 @@ export class EventService extends PrismaClient implements OnModuleInit {
       where: {
         id
       }
-    })
+    });
+
+    // Actualizar evento en redis
+    await this.redisServ.set(key, JSON.stringify(eventNew), 1800);
+
     return eventNew;
   }
 
   async updateStatus(updateStatusEvent: UpdateStatusEventDto) {
     const { status, userId, eventId } = updateStatusEvent;
+    const key = `event:${eventId}`;
 
     if (status == StatusEvent.PROGRAMMED) throw new RpcException({
       status: HttpStatus.FORBIDDEN,
@@ -369,7 +374,7 @@ export class EventService extends PrismaClient implements OnModuleInit {
       }
     }
 
-    await this.event.update({
+    const eventUpdate = await this.event.update({
       data: {
         status: status,
         start_time: status === StatusEvent.NOW ? now : undefined
@@ -378,6 +383,9 @@ export class EventService extends PrismaClient implements OnModuleInit {
         id: eventId
       }
     });
+
+    // Actualizar evento en redis
+    await this.redisServ.set(key, JSON.stringify(eventUpdate), 1800);
 
     if (status == StatusEvent.COMPLETED) {
       return { status: StatusEvent.COMPLETED, message: 'Finished event' }
@@ -514,10 +522,6 @@ export class EventService extends PrismaClient implements OnModuleInit {
   
   async countUsersRoom(key: string) {
     return await this.redisServ.hlen(key);
-  }
-
-  async moveToRoom(keyOrigin: string, keyDestination: string) {
-    return await this.redisServ.moveRoom(keyOrigin, keyDestination);
   }
   
   async deleteRoom(key: string) {

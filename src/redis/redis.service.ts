@@ -25,7 +25,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     async delete(key: string): Promise<number> {
-        return this.client.del(key);
+        return await this.client.del(key);
     }
 
     async hset(key: string, otp: { userId: number, socketId: string }, ttInSeconds?: number): Promise<void> {
@@ -51,25 +51,19 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         return await this.client.hlen(key);
     }
 
-    async moveRoom(keyOrigin: string, keyDestination: string) {
-        const users = await this.client.hgetall(keyOrigin);
-
-        Object.entries(users).forEach(async(element) => {
-            await this.client.hset(keyDestination, element[0], element[1]);
-        });
-
-        await this.delete(keyOrigin);
-
-        return true;
-    }
-
     async deleteUserRoom(payload: {userId: number, socketId: string}) {
         const { socketId: socket, userId } = payload;
         const { socketId, key } = await this.client.hgetall(`sockets:${socket}`);
+
         if (key && socketId) {
             await this.client.hdel(key, userId.toString());
             await this.delete(`sockets:${socketId}`);
             return key;
+        }
+
+        const len = await this.hlen(key);
+        if (len === 0) {
+            await this.delete(key);
         }
         return null;
     }

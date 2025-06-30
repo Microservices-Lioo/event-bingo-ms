@@ -54,4 +54,12 @@ export class CardsController {
     return this.cardsService.getCardCountForUserAndEvent(payload);
   }
 
+  @MessagePattern('findToEventByBuyer')
+  findToEventByBuyer( 
+    @Payload() payload: { buyer: number, eventId: number }
+  ) {
+    const { buyer, eventId } = payload;
+    return this.cardsService.findToEventByBuyer(buyer, eventId);
+  }
+
 }

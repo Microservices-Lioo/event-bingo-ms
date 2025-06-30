@@ -301,6 +301,18 @@ export class CardsService extends PrismaClient implements OnModuleInit {
       })
     }
   }
+  
+  async findToEventByBuyer(buyer: number, eventId: number) {
+    const cards = await this.card.findMany({
+      where: {
+        buyer, 
+        eventId,
+        available: true,
+      }
+    });
+
+    return cards;
+  }
 
   async buyerEventExists(eventId: number, buyer: number): Promise<boolean> {
     const key = `card:event:${eventId}:${buyer}:exist`;

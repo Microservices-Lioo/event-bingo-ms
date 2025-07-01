@@ -98,7 +98,7 @@ export class EventController {
   // Redis
   @MessagePattern('joinRoom')
   joinRoom(@Payload('key') key: string, @Payload('data') data: { userId: number, socketId: string }) {
-    this.eventService.joinRoom(key, data);
+    return this.eventService.joinRoom(key, data);
   }
   
   @MessagePattern('countUsersRoom')

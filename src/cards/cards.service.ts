@@ -7,7 +7,7 @@ import {
   Logger, 
   OnModuleInit 
 } from '@nestjs/common';
-import { CreateCardDto, UpdateAvailableDto } from './dto';
+import { CheckOrUncheckDto, CreateCardDto, UpdateAvailableDto } from './dto';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { RpcException } from '@nestjs/microservices';
 import { PaginationDto } from 'src/common';
@@ -337,5 +337,48 @@ export class CardsService extends PrismaClient implements OnModuleInit {
     await this.redisServ.set(key, JSON.stringify(true), 1800);
 
     return true;
+  }
+
+  async checkOrUncheckBox(checkOrUncheckDto: CheckOrUncheckDto) {
+    const { cardId, markedNum, userId: buyer, marked } =  checkOrUncheckDto;
+
+    const card = await this.findOne(cardId);
+
+    if (card.buyer !== buyer) throw new RpcException({
+      status: HttpStatus.FORBIDDEN,
+      message: `You are not allowed to modify this card`
+    });
+    
+    const nums = card.nums as any[][];
+
+    let cellMarked: { marked: number, number: number};
+    for (const row of nums) {
+      for (const cell of row) {
+        if (cell.number === markedNum) {
+          if (marked) {
+            cell.marked = marked;
+          } else {
+            if (cell.marked) {
+              cell.marked = false;
+            } else {
+              cell.marked = true;
+            }
+          }
+          cellMarked = cell;
+          break;
+        }
+      }
+    }
+
+    await this.card.update({
+      data: {
+        nums: nums as Prisma.JsonArray
+      },
+      where: {
+        id: cardId
+      }
+    });
+
+    return cellMarked;
   }
 }

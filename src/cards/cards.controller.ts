@@ -2,7 +2,7 @@ import { Controller, ParseIntPipe } from '@nestjs/common';
 import { CardsService } from './cards.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PaginationDto } from 'src/common';
-import { CreateCardDto, CreateManyCardDto, UpdateAvailableDto } from './dto';
+import { CheckOrUncheckDto, CreateCardDto, CreateManyCardDto, UpdateAvailableDto } from './dto';
 
 @Controller('cards')
 export class CardsController {
@@ -60,6 +60,13 @@ export class CardsController {
   ) {
     const { buyer, eventId } = payload;
     return this.cardsService.findToEventByBuyer(buyer, eventId);
+  }
+
+  @MessagePattern('checkOrUncheckBox')
+  checkOrUncheckBox(
+    @Payload() checkOrUncheckDto: CheckOrUncheckDto
+  ) {
+    return this.cardsService.checkOrUncheckBox(checkOrUncheckDto);
   }
 
 }

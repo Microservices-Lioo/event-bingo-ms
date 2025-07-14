@@ -175,6 +175,24 @@ export class CardsService extends PrismaClient implements OnModuleInit {
     return card;
   }
 
+  async findOneByIdBuyerEvent(payloadDto: { id: number, buyer: number, eventId: number}) {
+    const { id, buyer, eventId } = payloadDto;
+
+    const card = await this.card.findFirst({
+      where: {
+        id, buyer, eventId, available: true
+      }
+    });
+
+    if (!card) throw new RpcException({
+      status: HttpStatus.NOT_FOUND,
+      message: `Card not found`
+    });
+
+    const { nums } = card;
+    return nums;
+  }
+
   async findAllCardsByEvent(eventId: number, paginationDto: PaginationDto) {
     const { page, limit } = paginationDto;
 

@@ -24,6 +24,11 @@ export class CardsController {
   findOne(@Payload('id', ParseIntPipe) id: number) {
     return this.cardsService.findOne(id);
   }
+
+  @MessagePattern('findOneByIdBuyerEvent')
+  findOneByIdBuyerEvent( @Payload() payloadDto: { id: number, buyer: number, eventId: number}) {
+    return this.cardsService.findOneByIdBuyerEvent(payloadDto);
+  }
   
   @MessagePattern('findAllCardsByEvent')
   findAllCardsByEvent(

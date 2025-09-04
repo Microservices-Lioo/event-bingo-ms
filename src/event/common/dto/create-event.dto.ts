@@ -1,6 +1,6 @@
 import { Type } from "class-transformer";
-import { IsDate, IsNotEmpty, IsNumber, IsPositive, IsString, Min } from "class-validator"
-import { IsDateLongerToday } from "src/common";
+import { IsDate, IsNotEmpty, IsNumber, IsPositive, IsString, IsUUID } from "class-validator"
+import { IsDateLongerToday } from "src/common/decorators";
 
 export class CreateEventDto {
     @IsString()
@@ -11,21 +11,20 @@ export class CreateEventDto {
     @IsNotEmpty()
     description: string;
 
-    @IsNumber()
-    @Min(0)
-    userId: number;    
-
-    @Type(() => Date)
-    @IsDate()
+    @IsUUID()
+    @IsString()
     @IsNotEmpty()
-    @IsDateLongerToday()
-    time: Date;
+    userId: string;    
 
-    @IsNotEmpty()
     @IsNumber({
         maxDecimalPlaces: 4
     })
     @IsPositive()
     @Type( () => Number)
     price: number;
+
+    @Type(() => Date)
+    @IsDate()
+    @IsDateLongerToday()
+    start_time: Date;
 }

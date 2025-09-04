@@ -1,13 +1,13 @@
-import { IsNotEmpty, IsNumber, Min } from "class-validator";
+import { IsNotEmpty, IsString, IsUUID } from "class-validator";
 
 export class DeleteEventDto {
-    @IsNumber()
-    @IsNotEmpty()
-    @Min(1)
-    userId: number;
+  @IsUUID()
+  @IsString()
+  @IsNotEmpty()
+  id: string;
 
-    @IsNumber()
-    @IsNotEmpty()
-    @Min(1)
-    id: number;
+  @IsUUID()
+  @IsString()
+  @IsNotEmpty()
+  userId: string;
 }

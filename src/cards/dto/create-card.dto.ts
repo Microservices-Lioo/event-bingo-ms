@@ -1,13 +1,18 @@
-import { IsNumber, IsPositive } from "class-validator";
+import { IsNotEmpty, IsNumber, IsPositive, IsString, IsUUID } from "class-validator";
 
 export class CreateCardDto {
-
     @IsNumber()
     @IsPositive()
-    eventId: number;
+    quantity: number;
+    
+    @IsUUID()
+    @IsString()
+    @IsNotEmpty()
+    eventId: string;
 
-    @IsNumber()
-    @IsPositive()
-    buyer: number;
+    @IsUUID()
+    @IsString()
+    @IsNotEmpty()
+    buyer: string;
 
 }

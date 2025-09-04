@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common';
+import { Controller, ParseUUIDPipe } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AwardService } from './award.service';
 import { CreateAwardDto } from './dto/create-award.dto';
@@ -9,30 +9,33 @@ export class AwardController {
   constructor(private readonly awardService: AwardService) {}
 
   @MessagePattern('createAward')
-  create(@Payload() payload: { createAwardDto: CreateAwardDto, userId: number}) {
-    const { createAwardDto, userId } = payload;
-    return this.awardService.create(createAwardDto, userId);
+  create(
+    @Payload() award: CreateAwardDto,
+  ) {
+    const data = new Array(award);
+    return this.awardService.create(data);
   }
 
-  @MessagePattern('createMultiAward')
-  createMulti(@Payload() payload: { createAwardDto: CreateAwardDto[], userId: number}) {
-    const { createAwardDto, userId } = payload;
-    return this.awardService.createMulti(createAwardDto, userId);
+  @MessagePattern('createAwards')
+  createMany(
+    @Payload() award: CreateAwardDto[],
+  ) {
+    return this.awardService.create(award);
+  }
+
+  @MessagePattern('findOneAward')
+  findOne(@Payload('id', new ParseUUIDPipe()) id: string) {
+    return this.awardService.findOne(id);
   }
 
   @MessagePattern('findAllByEventAward')
-  findAllByEvent(@Payload() eventId: number) {
+  findAllByEvent(@Payload() eventId: string) {
     return this.awardService.findAllByEvent(eventId);
   }
 
   @MessagePattern('findAllWinnersByEventAward')
-  findAllWinnersByEvent(@Payload() eventId: number) {
+  findAllWinnersByEvent(@Payload() eventId: string) {
     return this.awardService.findAllWinnersByEvent(eventId);
-  }
-
-  @MessagePattern('findOneAward')
-  findOne(@Payload() id: number) {
-    return this.awardService.findOne(id);
   }
 
   @MessagePattern('updateAward')
@@ -41,8 +44,7 @@ export class AwardController {
   }
 
   @MessagePattern('removeAward')
-  remove(@Payload() id: number) {
-    console.log(id)
+  remove(@Payload() id: string) {
     return this.awardService.remove(id);
   }
 }

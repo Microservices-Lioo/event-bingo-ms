@@ -1,20 +1,26 @@
 
-import { 
-  forwardRef, 
-  HttpStatus, 
-  Inject, 
-  Injectable, 
-  Logger, 
-  OnModuleInit 
+import {
+  forwardRef,
+  HttpStatus,
+  Inject,
+  Injectable,
+  Logger,
+  OnModuleInit
 } from '@nestjs/common';
 import { CheckOrUncheckDto, CreateCardDto, UpdateAvailableDto } from './dto';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { RpcException } from '@nestjs/microservices';
 import { PaginationDto } from 'src/common';
 import { EventService } from 'src/event/event.service';
-import { CreateManyCardDto } from './dto/create-many-card.dto';
-import { CreateOrderItem } from 'src/shared';
-import { RedisService } from 'src/redis/redis.service';
+import { ParamIdBuyerEventDto } from 'src/event/common/dto';
+
+const BINGO_RANGES = {
+  B: { min: 1, max: 15 },
+  I: { min: 16, max: 30 },
+  N: { min: 31, max: 45 },
+  G: { min: 46, max: 60 },
+  O: { min: 61, max: 75 }
+};
 
 @Injectable()
 export class CardsService extends PrismaClient implements OnModuleInit {
@@ -24,7 +30,6 @@ export class CardsService extends PrismaClient implements OnModuleInit {
   constructor(
     @Inject(forwardRef(() => EventService))
     private readonly eventServ: EventService,
-    private readonly redisServ: RedisService
   ) {
     super();
   }
@@ -34,24 +39,35 @@ export class CardsService extends PrismaClient implements OnModuleInit {
     this.logger.log('Database connected');
   }
 
+  //* Crear card
   async create(createCardDto: CreateCardDto) {
-    const { buyer, eventId } = createCardDto;
-    try {
-      let card_nums: any[];
+    const { buyer, eventId, quantity } = createCardDto;
+    let cards = [];
+
+    const event = await this.eventServ.findOne(eventId);
+
+    if (event.userId == buyer) throw new RpcException({
+      status: HttpStatus.FORBIDDEN,
+      message: `El propietario no puede jugar en su propio evento.`,
+      code: 'CARD_FORBIDDEN'
+    });
+
+    for (let i = 0; i < quantity; i++) {
       let existCard = null;
-      let numCard = 0;
-
-      const event = await this.eventServ.findOne(eventId);
-
-      if (event.userId == buyer) throw new RpcException({
-        status: HttpStatus.FORBIDDEN,
-        message: `You cannot participate in your own event.`,
-        error: 'forbidden_participate_event'
-      });
-
       do {
-        card_nums = [];
-        card_nums = this.generateCard() as Prisma.JsonArray;
+        let B = [...this.generarCol(BINGO_RANGES.B)].sort((a, b) => a - b);
+        let I = [...this.generarCol(BINGO_RANGES.I)].sort((a, b) => a - b);
+        let N = [...this.generarCol(BINGO_RANGES.N)].sort((a, b) => a - b);
+        let G = [...this.generarCol(BINGO_RANGES.G)].sort((a, b) => a - b);
+        let O = [...this.generarCol(BINGO_RANGES.O)].sort((a, b) => a - b);
+
+        const colB = B.map(num => ({ marked: false, num: num }));
+        const colI = I.map(num => ({ marked: false, num: num }));
+        const colN = N.map(num => ({ marked: false, num: num }));
+        const colG = G.map(num => ({ marked: false, num: num }));
+        const colO = O.map(num => ({ marked: false, num: num }));
+
+        let card_nums = [[...colB], [...colI], [...colN], [...colG], [...colO]] as Prisma.JsonArray;
 
         existCard = await this.card.findFirst({
           where: {
@@ -62,105 +78,39 @@ export class CardsService extends PrismaClient implements OnModuleInit {
           }
         });
 
-      } while (existCard !== null);
-
-      const numsCards = await this.card.count({
-        where: {
-          eventId: eventId
-        }
-      });
-
-      numCard = numsCards + 1;
-
-      return await this.card.create({
-        data: {
-          buyer: buyer,
-          eventId: eventId,
-          num: numCard,
-          nums: card_nums
-        }
-      });
-    }  catch (error) {
-        throw new RpcException({
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: `Internal server error, try again.`,
-          error: 'create_card'
-        });
-      }
-  }
-
-  async createMany(createManyCardDto: CreateManyCardDto) {
-    const { orderId, buyer, eventId, totalItems } = createManyCardDto;    
-    let cardOrderItem: CreateOrderItem;
-    let cardsOrderItemArray: CreateOrderItem[] = [];
-    
-    const event = await this.eventServ.findOne(eventId);
-
-    if (event.userId == buyer) throw new RpcException({
-      status: HttpStatus.FORBIDDEN,
-      message: `You cannot participate in your own event.`,
-      error: 'forbidden_participate_event'
-    });
-
-    for(let i = 0; i < totalItems; i++) {
-      let card_nums: any[];
-      let existCard = null;
-      let numCard = 0;
-      try {
-        do {
-          card_nums = [];
-          card_nums = this.generateCard() as Prisma.JsonArray;
-    
-          existCard = await this.card.findFirst({
-            where: {
+        if (!existCard) {
+          const card = await this.card.create({
+            data: {
+              buyer: buyer,
               eventId: eventId,
-              nums: {
-                equals: card_nums
-              }
+              nums: card_nums
+            },
+            select: {
+              id: true,
+              buyer: true,
+              eventId: true,
+              nums: true,
+              available: true
             }
           });
-    
-        } while (existCard !== null);
-    
-        const numsCards = await this.card.count({
-          where: {
-            eventId: eventId
-          }
-        });
-    
-        numCard = numsCards + 1;
-    
-        const card = await this.card.create({
-          data: {
-            buyer: buyer,
-            eventId: eventId,
-            num: numCard,
-            nums: card_nums
-          }
-        });
 
-        if (totalItems > 1) {
-          cardsOrderItemArray.push({ orderId, cardId: card.id, priceUnit: event.price, quantity: 1 });
-        } else {
-          cardOrderItem = { orderId, cardId: card.id, priceUnit: event.price, quantity: 1 };
+          cards.push(card);
         }
+      } while (existCard !== null);
+    }
 
-      } catch (error) {
-        throw new RpcException({
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: `Internal server error, try again.`,
-          error: 'create_many_card'
-        });
-      }
+    if (cards.length <= 0) {
+      throw new RpcException({
+        message: `Las tablas no se han creado`,
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: 'CARD_INTERNAL_ERROR'
+      });
     }
-    if (cardsOrderItemArray.length === 0 ) {
-      return cardOrderItem;
-    } else {
-      return cardsOrderItemArray;
-    }
+    return { price: event.price, cards, eventName: event.name };
   }
 
-  async findOne(id: number) {
+  //* Obtener una card
+  async findOne(id: string) {
     const card = await this.card.findFirst({
       where: {
         id
@@ -169,13 +119,30 @@ export class CardsService extends PrismaClient implements OnModuleInit {
 
     if (!card) throw new RpcException({
       status: HttpStatus.NOT_FOUND,
-      message: `Card with id #${id} not found`
+      message: `La tabla con id #${id} no encontrada`,
+      code: 'CARD_NOT_FOUND'
     });
-    
+
     return card;
   }
 
-  async findOneByIdBuyerEvent(payloadDto: { id: number, buyer: number, eventId: number}) {
+  async findAllIds(ids: string[]) {
+    const cards = await this.card.findMany({
+      where: {
+        id: {
+          in: ids
+        }
+      },
+      select: {
+        id: true,
+        buyer: true
+      }
+    });
+    return cards;
+  }
+
+  //* Obtener una card por su id que pertenesca a un usuario y un evento
+  async findOneByIdBuyerEvent(payloadDto: ParamIdBuyerEventDto) {
     const { id, buyer, eventId } = payloadDto;
 
     const card = await this.card.findFirst({
@@ -186,23 +153,26 @@ export class CardsService extends PrismaClient implements OnModuleInit {
 
     if (!card) throw new RpcException({
       status: HttpStatus.NOT_FOUND,
-      message: `Card not found`
+      message: `Tabla no encontrada`,
+      code: 'CARD_NOT_FOUND'
     });
 
     const { nums } = card;
     return nums;
   }
 
-  async findAllCardsByEvent(eventId: number, paginationDto: PaginationDto) {
+  //* Obtener todas las cards por evento
+  async findAllByEvent(eventId: string, paginationDto: PaginationDto) {
     const { page, limit } = paginationDto;
 
     const total = await this.card.count({
       where: {
+        eventId: eventId,
         available: true
       }
     });
 
-    const lastPage = Math.ceil( total / limit );
+    const lastPage = Math.ceil(total / limit);
 
     return {
       data: await this.card.findMany({
@@ -221,7 +191,8 @@ export class CardsService extends PrismaClient implements OnModuleInit {
     }
   }
 
-  async countAllCardsByEvent(eventiId: number) {
+  //* Obtener la cantidad de cards por evento
+  async countAllCardsByEvent(eventiId: string) {
     const total = await this.card.count({
       where: {
         eventId: eventiId
@@ -234,60 +205,27 @@ export class CardsService extends PrismaClient implements OnModuleInit {
         available: false
       }
     });
-    return { total, disabled: totalDisabled};
+    return { total, disabled: totalDisabled };
   }
 
-  generateCard() {
-    const card = [];
-    const col1 = this.generateNumbersColm(1, 15, 5).sort((a, b) => a - b);
-    const col2 = this.generateNumbersColm(16, 30, 5).sort((a, b) => a - b);
-    const col3 = this.generateNumbersColm(31, 45, 5).sort((a, b) => a - b);
-    const col4 = this.generateNumbersColm(46, 60, 5).sort((a, b) => a - b);
-    const col5 = this.generateNumbersColm(61, 75, 5).sort((a, b) => a - b);
-
-    col3[2] = 0;
-
-    for(let i = 0; i < 5; i++) {
-      card.push([
-        { number: col1[i], marked: false },
-        { number: col2[i], marked: false },
-        { number: col3[i], marked: i === 2 ? true : false },
-        { number: col4[i], marked: false },
-        { number: col5[i], marked: false }
-      ]);
-
-    }
-    
-    return card;
-  }
-
-  generateNumbersColm(min: number, max: number, cant: number) {
-    const numbs: number[] = [];
-
-    while (numbs.length < cant) {
-      const num = Math.floor(Math.random() * (max - min)) + min;
-      if (!numbs.includes(num)) numbs.push(num);
-    }
-    return numbs;
-  }
-
+  //* Actualizar la disponibilidad de una card
   async updateAvailable(updateAvailable: UpdateAvailableDto) {
     const { userId, eventId, cardId } = updateAvailable;
-    
+
     const card = await this.findOne(cardId);
 
     const event = await this.eventServ.findOne(eventId);
 
     if (event.userId != userId) throw new RpcException({
       status: HttpStatus.FORBIDDEN,
-      message: `You cannot disable this card`,
-      error: 'forbidden_available_card'
+      message: `No puedes actualizar la card`,
+      code: 'CARD_FORBIDDEN'
     });
 
     if (card.buyer == userId) throw new RpcException({
       status: HttpStatus.FORBIDDEN,
-      message: `You cannot disable this card`,
-      error: 'forbidden_available_card'
+      message: `No puedes actualizar la card`,
+      code: 'CARD_FORBIDDEN'
     });
 
     await this.card.update({
@@ -301,29 +239,23 @@ export class CardsService extends PrismaClient implements OnModuleInit {
     return true;
   }
 
-  async getCardCountForUserAndEvent(card: { buyer: number, eventId: number }) {
+  //* Obtener el total de cards de un comprador por evento
+  async getCardCountForUserAndEvent(card: { buyer: string, eventId: string }) {
     const { buyer, eventId } = card;
-    try {
-      const total = await this.card.count({
-        where: {
-          buyer, eventId
-        }
-      });
-  
-      return total;
-    } catch (error) {
-      throw new RpcException({
-        status: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: 'Error when trying to get the number of cards of the user in an event.',
-        error: error
-      })
-    }
+    const total = await this.card.count({
+      where: {
+        buyer, eventId
+      }
+    });
+
+    return total;
   }
-  
-  async findToEventByBuyer(buyer: number, eventId: number) {
+
+  //* Obtener todas las cards de un comprador por evento
+  async findToEventByBuyer(buyer: string, eventId: string) {
     const cards = await this.card.findMany({
       where: {
-        buyer, 
+        buyer,
         eventId,
         available: true,
       }
@@ -332,14 +264,8 @@ export class CardsService extends PrismaClient implements OnModuleInit {
     return cards;
   }
 
-  async buyerEventExists(eventId: number, buyer: number): Promise<boolean> {
-    const key = `card:event:${eventId}:${buyer}:exist`;
-
-    const cachedEvent = await this.redisServ.get(key);
-
-    if (cachedEvent) {
-      return true;
-    }
+  //* Verificar el comprador de una card
+  async buyerEventExists(eventId: string, buyer: string): Promise<boolean> {
 
     const card = await this.card.findFirst({
       where: {
@@ -352,24 +278,24 @@ export class CardsService extends PrismaClient implements OnModuleInit {
       return false;
     }
 
-    await this.redisServ.set(key, JSON.stringify(true), 1800);
-
     return true;
   }
 
+  //* Cambiar el estado de una celda de una card
   async checkOrUncheckBox(checkOrUncheckDto: CheckOrUncheckDto) {
-    const { cardId, markedNum, userId: buyer, marked } =  checkOrUncheckDto;
+    const { cardId, markedNum, userId: buyer, marked } = checkOrUncheckDto;
 
     const card = await this.findOne(cardId);
 
     if (card.buyer !== buyer) throw new RpcException({
       status: HttpStatus.FORBIDDEN,
-      message: `You are not allowed to modify this card`
+      message: `No tiene permitido modificar esta card`,
+      code: 'CARD_FORBIDDEN'
     });
-    
+
     const nums = card.nums as any[][];
 
-    let cellMarked: { marked: number, number: number};
+    let cellMarked: { marked: number, number: number };
     for (const row of nums) {
       for (const cell of row) {
         if (cell.number === markedNum) {
@@ -398,5 +324,44 @@ export class CardsService extends PrismaClient implements OnModuleInit {
     });
 
     return cellMarked;
+  }
+
+  //* Validar una card
+  async validateCards(ids: string[]) {
+    ids = Array.from(new Set(ids));
+
+    const cards = await this.card.findMany({
+      where: {
+        id: {
+          in: ids
+        }
+      },
+      include: { event: { select: { price: true } } }
+    });
+
+    if (cards.length !== ids.length) {
+      throw new RpcException({
+        message: `Las cards no se encontraron`,
+        status: HttpStatus.BAD_REQUEST,
+        code: 'CARD_BAD_REQUEST'
+      });
+    }
+
+    return cards;
+  }
+
+  //* Generar los numeros de las columnas para las cards
+  generarCol(data: { max: number, min: number }) {
+    const { max, min } = data;
+    const col = new Set<number>();
+    let i = 0;
+    do {
+      const num = Math.floor(Math.random() * (max - min + 1)) + min;
+      if (!col.has(num)) {
+        col.add(num);
+        i++;
+      }
+    } while (i < 5);
+    return col;
   }
 }

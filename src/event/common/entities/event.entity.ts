@@ -1,13 +1,13 @@
 import { StatusEvent } from "../enums";
 
-export class Event {
-    id: number;
+export class IEvent {
+    id: string;
     name: string;
     description: string;
-    userId: number;
+    userId: string;
     status: StatusEvent;
-    time: Date;
+    price: number;
     start_time: Date;
     end_time: Date;
-    val_cart: string;
+    host_is_active: boolean;
 }

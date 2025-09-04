@@ -3,6 +3,7 @@ import { CardsService } from './cards.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PaginationDto } from 'src/common';
 import { CheckOrUncheckDto, CreateCardDto, CreateManyCardDto, UpdateAvailableDto } from './dto';
+import { ParamIdBuyerEventDto } from 'src/event/common/dto';
 
 @Controller('cards')
 export class CardsController {
@@ -12,35 +13,33 @@ export class CardsController {
   create(@Payload() createCardDto: CreateCardDto) {
     return this.cardsService.create(createCardDto);
   }
-
-  @MessagePattern('createManyCard')
-  createManyCards(
-    @Payload() createManyCardDto: CreateManyCardDto,
-  ) {
-    return this.cardsService.createMany(createManyCardDto);
-  }
   
   @MessagePattern('findOneCard')
-  findOne(@Payload('id', ParseIntPipe) id: number) {
+  findOne(@Payload() id: string) {
     return this.cardsService.findOne(id);
   }
 
+  @MessagePattern('findAllIdsCard')
+  findAllIds(@Payload() ids: string[]) {
+    return this.cardsService.findAllIds(ids);
+  }
+
   @MessagePattern('findOneByIdBuyerEvent')
-  findOneByIdBuyerEvent( @Payload() payloadDto: { id: number, buyer: number, eventId: number}) {
+  findOneByIdBuyerEvent( @Payload() payloadDto: ParamIdBuyerEventDto) {
     return this.cardsService.findOneByIdBuyerEvent(payloadDto);
   }
   
   @MessagePattern('findAllCardsByEvent')
   findAllCardsByEvent(
-    @Payload() payload: { eventId: number, paginationDto: PaginationDto}
+    @Payload() payload: { eventId: string, paginationDto: PaginationDto}
   ) {
     const { eventId, paginationDto } = payload;
-    return this.cardsService.findAllCardsByEvent(eventId, paginationDto);
+    return this.cardsService.findAllByEvent(eventId, paginationDto);
   }
 
   @MessagePattern('countAllCardsByEvent')
   countAllCardsByEvent(
-    @Payload() eventId: number
+    @Payload() eventId: string
   ) {
     return this.cardsService.countAllCardsByEvent(eventId);
   }
@@ -54,14 +53,14 @@ export class CardsController {
 
   @MessagePattern('getCardCountForUserAndEvent')
   getCardCountForUserAndEvent(
-    @Payload() payload: { buyer: number, eventId: number }
+    @Payload() payload: { buyer: string, eventId: string }
   ) {
     return this.cardsService.getCardCountForUserAndEvent(payload);
   }
 
   @MessagePattern('findToEventByBuyer')
   findToEventByBuyer( 
-    @Payload() payload: { buyer: number, eventId: number }
+    @Payload() payload: { buyer: string, eventId: string }
   ) {
     const { buyer, eventId } = payload;
     return this.cardsService.findToEventByBuyer(buyer, eventId);
@@ -74,4 +73,10 @@ export class CardsController {
     return this.cardsService.checkOrUncheckBox(checkOrUncheckDto);
   }
 
+  @MessagePattern('validateCards')
+  validateCards(
+    @Payload() ids: string[]
+  ) {
+    return this.cardsService.validateCards(ids);
+  }
 }

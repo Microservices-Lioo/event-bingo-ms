@@ -19,29 +19,16 @@ export class AwardService extends PrismaClient implements OnModuleInit {
     private readonly eventServ: EventService
   ) { super(); }
 
-  async create(createAwardDto: CreateAwardDto, userId: number) {
-    
-    await this.eventServ.findByUser(userId, createAwardDto.eventId);
-    
-    const award = await this.award.create({
+  //* crear uno o mas premios
+  async create(createAwardDto: CreateAwardDto[]) {
+    return await this.award.createMany({
       data: createAwardDto
     });
 
-    return award;
   }
 
-  async createMulti(createAwardDto: CreateAwardDto[], userId: number) {
-    
-    await this.eventServ.findByUser(userId, createAwardDto[0].eventId);
-    
-    const award = await this.award.createMany({
-      data: createAwardDto
-    });
-
-    return award;
-  }
-
-  async findAllByEvent(eventId: number) {
+  //* Obtener todos los premios por evento
+  async findAllByEvent(eventId: string) {
     const awards = await this.award.findMany({
       where: {
         eventId
@@ -50,20 +37,20 @@ export class AwardService extends PrismaClient implements OnModuleInit {
     return awards;
   }
 
-  async findAllWinnersByEvent(eventId: number) {
-    const awards = await this.award.findMany({
+  //* Obtener todos los ids de losganadores de un evento por premio
+  async findAllWinnersByEvent(eventId: string) {
+    return await this.award.findMany({
       where: {
-        eventId
+        eventId,
+        winner: {
+          not: null
+        }
       },
-      select: {
-        winner_user: true
-      }
     });
-
-    return awards.map(a => a.winner_user);
   }
 
-  async findOne(id: number) {
+  //* Obtener una premios
+  async findOne(id: string) {
     const award = await this.award.findFirst({
       where: {
         id
@@ -72,40 +59,37 @@ export class AwardService extends PrismaClient implements OnModuleInit {
 
     if (!award) throw new RpcException({
       status: HttpStatus.NOT_FOUND,
-      message: `Award with id #${id} not found`,
+      message: `El premio con el id #${id} no encontrada`,
+      code: 'AWARD_NOT_FOUND'
     });
 
     return award;
   }
 
+  //* Actualizar un premio
   async update(updateAwardDto: UpdateAwardDto) {
     const { id, ...data } = updateAwardDto;
 
-    const awardOld = await this.findOne(id);
+    await this.findOne(id);
 
-    if (!data.eventId || awardOld.eventId != data.eventId) throw new RpcException({
-      status: HttpStatus.CONFLICT,
-      message: `The award does not belong to this event`,
-      error: 'conflict_eventid_award'
-    });
-
-    const award = await this.award.update({
+    return await this.award.update({
       data: data,
       where: {
         id
       }
     });
-
-    return award;
   }
 
-  async remove(id: number) {
+  //* Eliminar un premio
+  async remove(id: string) {
+    
     const award = await this.findOne(id);
+    const { winner, gameId } = award;
 
-    if (award.gameId != null || award.num_award != null || award.winner_user != null ) throw new RpcException({
+    if (gameId || winner ) throw new RpcException({
       status: HttpStatus.CONFLICT,
-      message: `This award is already won`,
-      error: 'confict_won_award'
+      message: `El premio ya ha sido asignado, no es posible eliminarlo`,
+      code: 'AWARD_CONFLICT'
     });
     
     await this.award.delete({
@@ -117,20 +101,12 @@ export class AwardService extends PrismaClient implements OnModuleInit {
     return id;
   }
 
-  async removeByEventId(id: number) {
-    const awards = await this.award.findMany({
+  //* Eliminar todos los premios de un evento
+  async removeByEventId(id: string) {
+    return await this.award.deleteMany({
       where: {
         eventId: id
       }
     });
-
-    if (awards.length === -1) {
-      return ;
-    }
-
-    awards.forEach(async (award) => {
-      await this.remove(award.id);
-    });
-
   }
 }

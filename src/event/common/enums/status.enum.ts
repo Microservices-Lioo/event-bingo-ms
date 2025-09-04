@@ -1,6 +1,6 @@
 export enum StatusEvent {
-    TODAY = 'TODAY',
-    NOW = 'NOW',
-    PROGRAMMED = 'PROGRAMMED',
+    PENDING = 'PENDING',
+    ACTIVE = 'ACTIVE',
+    CANCELLED = 'CANCELLED',
     COMPLETED = 'COMPLETED',
 }

@@ -1,73 +1,115 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# Events Bingo Microservice
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-green?style=flat&logo=node.js)](https://nodejs.org/)
+[![NestJS](https://img.shields.io/badge/NestJS-Framework-red?style=flat&logo=nestjs)](https://nestjs.com/)
+[![NATS](https://img.shields.io/badge/NATS-Messaging-blue?style=flat&logo=nats)](https://nats.io/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue?style=flat&logo=postgresql)](https://postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-Containerized-blue?style=flat&logo=docker)](https://www.docker.com/)
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Microservicio de gestion de eventos de bingo, construido con NestJS. Proporciona funcionalidades completas de gestión de eventos, premios, card (tablas de bingo) y comunicación asíncrona a través de NATS.
 
-## Description
+## 🛠️ Tecnologías Utilizadas
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Framework**: NestJS 10+
+- **Runtime**: Node.js 18+
+- **Lenguaje**: TypeScript 5+
+- **Base de Datos**: PostgreSQL 15+
+- **Message Broker**: NATS
+- **Containerización**: Docker
 
-## Installation
+## ✨ Características
 
+- **Gestión de eventos de bingo**: CRUD completo para los eventos
+- **Gestión de awards de bingo**: CRUD completo para los awards (premios)
+- **Gestión de cards de bingo**: CRUD completo para las cards (tablas de bingo)
+- **Comunicación Asíncrona**: Integración NATS para microservicios
+
+## 📋 Requisitos Previos
+
+- [Node.js](https://nodejs.org/) v18 o superior
+- [npm](https://www.npmjs.com/) v8 o superior
+- [Docker](https://www.docker.com/) y Docker Compose
+- [PostgreSQL](https://postgresql.org/) v15+
+- [Git](https://git-scm.com/)
+
+## 🚀 Ejecución
+
+### 1. Clonar el repositorio
 ```bash
-$ npm install
+git clone https://github.com/Microservices-Lioo/event-bingo-ms.git
+cd event-bingo-ms
 ```
 
-## Running the app
-
+### 2. Instalar dependencias
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
 ```
 
-## Test
-
+### 3. Configurar variables de entorno
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+cp .env.template .env
+# Editar el archivo .env con tu configuración
 ```
 
-## Support
+### 4. Levantar servicios con Docker
+#### PostgreSQL y NATS 
+Ejecutar el archivo docker-compose.yml para ambiente de desarrollo, caso
+contrario ejecutar el docker-compose.prod.yml.
+```bash
+# Modo desarrollo
+docker compose -f docker-compose.yml up --build
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# Modo de producción
+docker compose -f docker-compose.prod.yml up --build
+```
 
-## Stay in touch
+### 5. Iniciar el microservicio
+```bash
+# Desarrollo
+npm run start:dev
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+# Producción
+npm run start:prod
+```
 
-## License
+## Docker para contenedor único en producción
+```bash
+docker build -f dockerfile.prod -t events-ms .
+```
 
-Nest is [MIT licensed](LICENSE).
+## NATS con Docker
+```bash
+docker run -d --name nats-server -p 4222:4222 -p 8222:8222 nats
+```
+
+## 🤝 Contribución
+
+1. Fork del repositorio
+2. Crear rama feature (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit cambios (`git commit -m 'Add nueva funcionalidad'`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+5. Abrir Pull Request
+
+### Estándares
+- Seguir convenciones de TypeScript y NestJS
+- Incluir tests para nuevas funcionalidades
+- Documentar funciones complejas
+
+## 📝 Licencia
+
+Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para más detalles.
+
+## 👥 Equipo
+
+Desarrollado por el equipo **Microservices-Lioo**.
+
+## 📞 Soporte
+
+Si tienes problemas o preguntas:
+
+1. Busca en [Issues](https://github.com/Microservices-Lioo/event-bingo-ms/issues)
+2. Crea un nuevo issue si es necesario
+
+---
+
+⭐ **¡Si este proyecto te es útil, dale una estrella en GitHub!**

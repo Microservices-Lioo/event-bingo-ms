@@ -9,51 +9,51 @@ datasource db {
 }
 
 model Event {
-  id          Int         @id @default(autoincrement())
-  name        String
-  description String
-  userId      Int
-  status      StatusEvent @default(PROGRAMMED)
-  start_time  DateTime?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  price       Float
-  end_time    DateTime?
-  time        DateTime
-  award       Award[]
-  card        Card[]
+  id             String      @id @default(uuid())
+  name           String
+  description    String
+  userId         String
+  status         StatusEvent @default(PENDING)
+  price          Float
+  start_time     DateTime
+  end_time       DateTime?
+  host_is_active Boolean     @default(false)
+  award          Award[]
+  card           Card[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 }
 
 model Award {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(uuid())
   name        String
   description String
-  num_award   Int?
-  winner_user Int?
-  gameId      Int?
-  eventId     Int
+  gameId      String?
+  event       Event    @relation(fields: [eventId], references: [id])
+  eventId     String
+  card        Card?    @relation(fields: [winner], references: [id])
+  winner      String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  event       Event    @relation(fields: [eventId], references: [id])
 }
 
 model Card {
-  id        Int      @id @default(autoincrement())
-  num       Int
-  buyer     Int
-  eventId   Int
+  id        String   @id @default(uuid())
+  buyer     String
   available Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
   nums      Json
   event     Event    @relation(fields: [eventId], references: [id])
+  eventId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Award     Award[]
 
   @@index([available])
 }
 
 enum StatusEvent {
-  TODAY
-  NOW
-  PROGRAMMED
+  PENDING
+  ACTIVE
+  CANCELLED
   COMPLETED
 }

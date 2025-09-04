@@ -1,19 +1,21 @@
-import { IsEnum, IsNumber, IsOptional, IsPositive } from "class-validator";
+import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
 import { StatusEvent } from "../enums";
 
 export class UpdateStatusEventDto {
-    @IsNumber()
-    @IsPositive()
-    userId: number;
+  @IsUUID()
+  @IsString()
+  @IsNotEmpty()
+  id: string;
 
-    @IsNumber()
-    @IsPositive()
-    eventId: number;
-    
-    @IsOptional()
-      @IsEnum(StatusEvent, {
-        message: 'The status must be one of the following: TODAY, NOW, PROGRAMMED, COMPLETED'
-      })
-    status: StatusEvent;
+  @IsUUID()
+  @IsString()
+  @IsNotEmpty()
+  userId: string;
+
+  @IsOptional()
+  @IsEnum(StatusEvent, {
+    message: 'El status debe ser uno de los siguientes: PENDING, ACTIVE, CANCELLED, COMPLETED'
+  })
+  status: StatusEvent;
 
 }

@@ -1,9 +1,10 @@
-import { IsBoolean, IsNumber, IsOptional, IsPositive } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, IsUUID } from "class-validator";
 
 export class CheckOrUncheckDto {
-    @IsNumber()
-    @IsPositive()
-    cardId: number;
+    @IsUUID()
+    @IsString()
+    @IsNotEmpty()
+    cardId: string;
 
     @IsNumber()
     @IsPositive()
@@ -13,7 +14,8 @@ export class CheckOrUncheckDto {
     @IsBoolean()
     marked: boolean;
 
-    @IsNumber()
-    @IsPositive()
-    userId: number;
+    @IsUUID()
+    @IsString()
+    @IsNotEmpty()
+    userId: string;
 }

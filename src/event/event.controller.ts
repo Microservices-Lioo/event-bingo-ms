@@ -2,32 +2,31 @@ import { StatusEvent } from './common/enums/status.enum';
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { EventService } from './event.service';
-import { 
-  CreateEventDto, 
-  DeleteEventDto, 
-  UpdateEventDto, 
-  UpdateStatusEventDto 
-} from './common';
-import { PaginationDto } from 'src/common';
+import { IdDto, PaginationDto } from 'src/common';
+import { CreateAwardDto } from 'src/award/dto';
+import { CreateEventDto, PaginationStatusDto, UpdateEventDto, UpdateStatusEventDto, DeleteEventDto, ParamIdEventUserDto } from './common/dto';
 
 @Controller()
 export class EventController {
   constructor(private readonly eventService: EventService) {}
 
   @MessagePattern('createEvent')
-  create(@Payload() createEventDto: CreateEventDto) {
-    return this.eventService.create(createEventDto);
+  create(
+    @Payload('event') createEventDto: CreateEventDto,
+    @Payload('awards') createAwardDto: CreateAwardDto[]
+  ) {
+    return this.eventService.create(createEventDto, createAwardDto);
   }
 
   @MessagePattern('findAllStatusEvent')
-  findAllStatus(@Payload() payload: { pagination: PaginationDto, status: StatusEvent }) {
+  findAllStatus(@Payload() payload: PaginationStatusDto) {
     return this.eventService.findAllStatus(payload);
   }
 
-  @MessagePattern('findAllByUserStatusEvent')
-  findAllByUserStatus(
-    @Payload() payload: { pagination: PaginationDto, status: StatusEvent, userId: number }) {
-    return this.eventService.findAllByUserStatus(payload);
+  @MessagePattern('findAllUserByStatusEvent')
+  findAllUserByStatus(
+    @Payload() payload: { pagination: PaginationDto, status: StatusEvent, userId: string }) {
+    return this.eventService.findAllUserByStatus(payload);
   }
 
   @MessagePattern('findAllEvent')
@@ -35,31 +34,30 @@ export class EventController {
     return this.eventService.findAll(pagination);
   }
 
-  @MessagePattern('findByUserEvent')
-  findByUser(@Payload() payload: { id: number, pagination: PaginationDto}) {
-    const { id, pagination } = payload;
-    return this.eventService.findAllByUser(id, pagination);
+  @MessagePattern('findAllUserEvent')
+  findAllUser(@Payload() data: { userId: string, pagination: PaginationDto}) {
+    return this.eventService.findAllUser(data);
   }
 
-  @MessagePattern('findByUserWithAwardsEvent')
-  findByUserWithAwards(@Payload() payload: { id: number, pagination: PaginationDto }) {
+  @MessagePattern('findAllUserWithAwardsEvent')
+  findAllUserWithAwards(@Payload() payload: { id: string, pagination: PaginationDto }) {
     const { id, pagination } = payload;
-    return this.eventService.findAllByUserWithAwards(id, pagination);
+    return this.eventService.findAllUserWithAwards(id, pagination);
   }
 
   @MessagePattern('findOneEvent')
-  findOne(@Payload() id: number) {
-    return this.eventService.findOne(id);
+  findOne(@Payload() idDto: IdDto) {
+    return this.eventService.findOne(idDto.id);
   }
 
-  @MessagePattern('findOneWithAwardEvent')
-  findOneWithAward(@Payload() eventId: number) {
-    return this.eventService.findOneWithAward(eventId);
+  @MessagePattern('findOneWithAwardsEvent')
+  findOneWithAwards(@Payload() idDto: IdDto) {
+    return this.eventService.findOneWithAwards(idDto.id);
   }
 
   @MessagePattern('updateEvent')
   update(@Payload() updateEventDto: UpdateEventDto) {
-    return this.eventService.update(updateEventDto.id, updateEventDto);
+    return this.eventService.update(updateEventDto);
   }
 
   @MessagePattern('updateStatusEvent')
@@ -72,49 +70,8 @@ export class EventController {
     return this.eventService.remove(deletDto);
   }
 
-  @MessagePattern('findByUserEvent')
-  findByUserEvent( @Payload() payload: { eventId: number, userId: number }) {
-    const { eventId, userId } = payload;
-    return this.eventService.findByUserEvent(eventId, userId);
-  }
-
-  @MessagePattern('findByUserRoleEvent')
-  findByUserRoleEvent( @Payload() payload: { eventId: number, userId: number }) {
-    const { eventId, userId } = payload;
-    return this.eventService.findByUserRoleEvent(eventId, userId);
-  }
-
-  // WebSocket
-  @MessagePattern('verifyAParticipatingUserEvent')
-  verifyAParticipatingUserEvent( @Payload() payload: { eventId: number, userId: number }) {
-    return this.eventService.verifyAParticipatingUserEvent(payload);
-  }
-
-  @MessagePattern('findOneEventWS')
-  findOneWs(@Payload() id: number) {
-    return this.eventService.findOneWs(id);
-  }
-
-  // Redis
-  @MessagePattern('joinRoom')
-  joinRoom(@Payload('key') key: string, @Payload('data') data: { userId: number, socketId: string }) {
-    return this.eventService.joinRoom(key, data);
-  }
-  
-  @MessagePattern('countUsersRoom')
-  countUsersRoom(@Payload() key: string) {
-    return this.eventService.countUsersRoom(key);
-  }
-
-  @MessagePattern('deleteRoom')
-  deleteRoom(@Payload() key: string) {
-    return this.eventService.deleteRoom(key);
-  }
-
-  @MessagePattern('deleteUserRoom')
-  deleteUserRoom(
-    @Payload() payload: {userId: number, socketId: string}
-  ): Promise<string | null> {
-    return this.eventService.deleteUserRoom(payload);
+  @MessagePattern('findOneByUserEvent')
+  findOneByUser( @Payload() payload: ParamIdEventUserDto) {
+    return this.eventService.findOneByUser(payload);
   }
 }

@@ -8,12 +8,14 @@ import {
 } from '@nestjs/common';
 
 import { PrismaClient, StatusEvent } from '@prisma/client';
-import { RpcException } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { PaginationDto } from 'src/common';
 import { CardsService } from 'src/cards/cards.service';
 import { AwardService } from 'src/award/award.service';
 import { CreateAwardDto } from 'src/award/dto';
 import { CreateEventDto, UpdateEventDto, UpdateStatusEventDto, DeleteEventDto, PaginationStatusDto, ParamIdEventUserDto } from './common/dto';
+import { NATS_SERVICE } from 'src/config';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class EventService extends PrismaClient implements OnModuleInit {
@@ -29,21 +31,51 @@ export class EventService extends PrismaClient implements OnModuleInit {
     private readonly servCard: CardsService,
     @Inject(forwardRef(() => AwardService))
     private readonly servAward: AwardService,
+    @Inject(NATS_SERVICE) private readonly client: ClientProxy
   ) {
     super();
   }
 
   //* Crear un evento
   async create(createEventDto: CreateEventDto, createAwardDto: CreateAwardDto[]) {
-    const event = await this.event.create({
-      data: createEventDto
-    });
+    const compensations = [];
+    try {
+      // Creación del evento
+      const event = await this.event.create({
+        data: createEventDto
+      });
+      compensations.push(() => this.remove({id: event.id, userId: event.userId }));
 
-    const awardItems = createAwardDto.map(award => ({eventId: event.id, ...award}))
-    // Crea los premios
-    const awards = await this.servAward.create(awardItems);
+      // Creación de los premios
+      const awardItems = createAwardDto.map(award => ({eventId: event.id, ...award}))
+      const awards = await this.servAward.create(awardItems);
+      compensations.push(() => this.servAward.removeByEventId(event.id));
 
-    return { event, awards };
+      // Crear sala y asignar rol
+      const room = await firstValueFrom(
+        this.client.send('createRoom', { 
+          eventId: event.id, 
+          userId: createEventDto.userId,
+          start_time: createEventDto.start_time
+        })
+      );
+
+      return { event, awards, ...room };
+    } catch(error) {
+      for (let compensation of compensations.reverse()) {
+        try {
+          await compensation();
+        } catch (compError) {
+          this.logger.error('Error en compensación:', compError);          
+        }
+      }
+
+      this.logger.error('Error en compensación:', error);          
+      throw new RpcException({
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Error al crear el evento. Operación revertida.'
+      })
+    }
   }
 
   //* Obtener todos los eventos por status

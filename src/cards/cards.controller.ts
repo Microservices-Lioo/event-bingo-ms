@@ -2,7 +2,7 @@ import { Controller, ParseIntPipe } from '@nestjs/common';
 import { CardsService } from './cards.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PaginationDto } from 'src/common';
-import { CheckOrUncheckDto, CreateCardDto, CreateManyCardDto, UpdateAvailableDto } from './dto';
+import { CheckOrUncheckDto, CreateCardDto, CreateManyCardDto, UpdateAvailableDto, UpdateAvailableManyDto } from './dto';
 import { ParamIdBuyerEventDto } from 'src/event/common/dto';
 
 @Controller('cards')
@@ -51,6 +51,13 @@ export class CardsController {
     return this.cardsService.updateAvailable(updateAvailableDto);
   }
 
+  @MessagePattern('updateAvailableManyCard')
+  updateAvailableMany(
+    @Payload() payload: UpdateAvailableManyDto
+  ) {
+    return this.cardsService.updateAvailableMany(payload);
+  }
+
   @MessagePattern('getCardCountForUserAndEvent')
   getCardCountForUserAndEvent(
     @Payload() payload: { buyer: string, eventId: string }
@@ -78,5 +85,10 @@ export class CardsController {
     @Payload() ids: string[]
   ) {
     return this.cardsService.validateCards(ids);
+  }
+
+  @MessagePattern('removeCards')
+  removeCards(@Payload() ids: string[]) {
+    return this.cardsService.removeCards(ids);
   }
 }

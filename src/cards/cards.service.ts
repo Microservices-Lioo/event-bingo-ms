@@ -7,7 +7,7 @@ import {
   Logger,
   OnModuleInit
 } from '@nestjs/common';
-import { CheckOrUncheckDto, CreateCardDto, UpdateAvailableDto } from './dto';
+import { CheckOrUncheckDto, CreateCardDto, UpdateAvailableDto, UpdateAvailableManyDto } from './dto';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { RpcException } from '@nestjs/microservices';
 import { PaginationDto } from 'src/common';
@@ -83,7 +83,8 @@ export class CardsService extends PrismaClient implements OnModuleInit {
             data: {
               buyer: buyer,
               eventId: eventId,
-              nums: card_nums
+              nums: card_nums,
+              available: false
             },
             select: {
               id: true,
@@ -239,6 +240,16 @@ export class CardsService extends PrismaClient implements OnModuleInit {
     return true;
   }
 
+  //* Actualizar la disponibilidad de muchas cards
+  async updateAvailableMany(updateAvailable: UpdateAvailableManyDto) {
+    const { ids } = updateAvailable;
+
+    await this.card.updateMany({
+      data: { available: true },
+      where: { id: { in: ids } }
+    })
+  }
+
   //* Obtener el total de cards de un comprador por evento
   async getCardCountForUserAndEvent(card: { buyer: string, eventId: string }) {
     const { buyer, eventId } = card;
@@ -363,5 +374,16 @@ export class CardsService extends PrismaClient implements OnModuleInit {
       }
     } while (i < 5);
     return col;
+  }
+
+  //* Eliminar las cards por ID
+  async removeCards(ids: string[]) {
+    return await this.card.deleteMany({
+      where: {
+        id: {
+          in: ids
+        }
+      }
+    });
   }
 }

@@ -255,7 +255,7 @@ export class CardsService extends PrismaClient implements OnModuleInit {
     const { buyer, eventId } = card;
     const total = await this.card.count({
       where: {
-        buyer, eventId
+        buyer, eventId, available: true
       }
     });
 
@@ -294,7 +294,7 @@ export class CardsService extends PrismaClient implements OnModuleInit {
 
   //* Cambiar el estado de una celda de una card
   async checkOrUncheckBox(checkOrUncheckDto: CheckOrUncheckDto) {
-    const { cardId, markedNum, userId: buyer, marked } = checkOrUncheckDto;
+    const { cardId, markedNum, userId: buyer } = checkOrUncheckDto;
 
     const card = await this.findOne(cardId);
 
@@ -306,35 +306,19 @@ export class CardsService extends PrismaClient implements OnModuleInit {
 
     const nums = card.nums as any[][];
 
-    let cellMarked: { marked: number, number: number };
-    for (const row of nums) {
-      for (const cell of row) {
-        if (cell.number === markedNum) {
-          if (marked) {
-            cell.marked = marked;
-          } else {
-            if (cell.marked) {
-              cell.marked = false;
-            } else {
-              cell.marked = true;
-            }
-          }
-          cellMarked = cell;
-          break;
-        }
-      }
-    }
+    const newNums = nums.map(cell => {
+      const newCell = cell.map(pos => pos.num === markedNum ? { ...pos, marked: !pos.marked } : pos);
+      return newCell;
+    });
 
-    await this.card.update({
+    return await this.card.update({
       data: {
-        nums: nums as Prisma.JsonArray
+        nums: newNums as Prisma.JsonArray
       },
       where: {
         id: cardId
       }
     });
-
-    return cellMarked;
   }
 
   //* Validar una card
@@ -385,5 +369,28 @@ export class CardsService extends PrismaClient implements OnModuleInit {
         }
       }
     });
+  }
+
+  //* Resetear el check de las cards de un evento
+  async resetCardsForEvent(eventId: string, ids: string[]) {
+    const cards = await this.card.findMany({
+      where: { eventId, id: { in: ids } },
+      select: { id: true, nums: true }
+    });
+
+    const updates = cards.map(card => {
+      const resetNums = (card.nums as any).map((row: any[]) =>
+        row.map((cell: any) => ({ ...cell, marked: false }))
+      );
+
+      return this.card.update({
+        where: { id: card.id },
+        data: { nums: resetNums }
+      });
+    });
+
+    const result = await this.$transaction(updates);
+
+    return result;
   }
 }

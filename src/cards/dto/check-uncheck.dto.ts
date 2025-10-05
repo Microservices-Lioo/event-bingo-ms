@@ -1,9 +1,7 @@
-import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, IsUUID } from "class-validator";
+import { IsBoolean, IsNumber, IsOptional, IsPositive, IsUUID } from "class-validator";
 
 export class CheckOrUncheckDto {
     @IsUUID()
-    @IsString()
-    @IsNotEmpty()
     cardId: string;
 
     @IsNumber()
@@ -15,7 +13,5 @@ export class CheckOrUncheckDto {
     marked: boolean;
 
     @IsUUID()
-    @IsString()
-    @IsNotEmpty()
     userId: string;
 }

@@ -32,9 +32,12 @@ export class AwardService extends PrismaClient implements OnModuleInit {
     const awards = await this.award.findMany({
       where: {
         eventId
-      }
-    });    
-    return awards;
+      },
+      include: { card: true }
+    });
+    
+    const result = awards.map(({ card, ...award}) => ({ ...award, winner: award.winner ? card.buyer : award.winner }))
+    return result;
   }
 
   //* Obtener todos los ids de losganadores de un evento por premio

@@ -266,7 +266,7 @@ export class EventService extends PrismaClient implements OnModuleInit {
   async findOneWithAwards(eventId: string) {
     const event = await this.event.findFirst({
       include: {
-        award: true
+        award: { include: { card: true }}
       },
       where: {
         id: eventId
@@ -278,8 +278,10 @@ export class EventService extends PrismaClient implements OnModuleInit {
       message: `El evento con id #${eventId} no encontrado`,
       code: 'EVENT_NOT_FOUND'
     });
+    const { award, ...data } = event;
+    const result = award.map(({ card, ...award}) => ({ ...award, winner: award.winner ? card.buyer : award.winner }))
 
-    return event;
+    return { ...data, award: result };
   }
 
   //* Actualizar un evento

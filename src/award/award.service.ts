@@ -112,4 +112,13 @@ export class AwardService extends PrismaClient implements OnModuleInit {
       }
     });
   }
+
+  //* Verificar si existen premios disponibles en un evento
+  async awardsAvailableByEvent(eventId: string) {
+    const awards = await this.award.count({
+      where: { eventId, gameId: { equals: null }, winner: { equals: null } }
+    });
+
+    return awards;
+  }
 }

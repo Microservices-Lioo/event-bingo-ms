@@ -24,7 +24,7 @@ export class AwardController {
   }
 
   @MessagePattern('findOneAward')
-  findOne(@Payload('id', new ParseUUIDPipe()) id: string) {
+  findOne(@Payload('id', ParseUUIDPipe) id: string) {
     return this.awardService.findOne(id);
   }
 
@@ -46,5 +46,10 @@ export class AwardController {
   @MessagePattern('removeAward')
   remove(@Payload() id: string) {
     return this.awardService.remove(id);
+  }
+
+  @MessagePattern('awardsAvailableByEventAward')
+  awardsAvailableByEvent(@Payload('eventId', ParseUUIDPipe) eventId: string) {
+    return this.awardService.awardsAvailableByEvent(eventId);
   }
 }

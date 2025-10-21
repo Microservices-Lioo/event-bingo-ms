@@ -31,7 +31,6 @@ export class UpdateEventDto extends PartialType(CreateEventDto) {
   @IsOptional()
   @Type(() => Date)
   @IsDate()
-  @IsDateLongerToday()
   end_time?: Date;
 
   @IsOptional()

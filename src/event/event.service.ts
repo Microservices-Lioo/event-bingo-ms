@@ -406,4 +406,25 @@ export class EventService extends PrismaClient implements OnModuleInit {
 
     return event;
   }
+
+  //* Finalizar evento
+  async eventCompleted(updateEventDto: UpdateEventDto) {
+    const { id, userId, ...data} = updateEventDto;
+
+    const event = await this.findOne(id);
+
+    // verifica que el usuario que hace la peticion no es le dueño
+    if (event.userId !== userId) throw new RpcException({
+      status: HttpStatus.FORBIDDEN,
+      message: `No tienes acceso a este recurso`,
+      code: 'EVENT_FORBIDDEN'
+    });
+
+    return await this.event.update({
+      data: data,
+      where: {
+        id
+      }
+    });
+  }
 }

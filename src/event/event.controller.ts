@@ -74,4 +74,9 @@ export class EventController {
   findOneByUser( @Payload() payload: ParamIdEventUserDto) {
     return this.eventService.findOneByUser(payload);
   }
+
+  @MessagePattern('completedEvent')
+  eventCompleted(@Payload() updateEventDto: UpdateEventDto) {
+    return this.eventService.eventCompleted(updateEventDto);
+  }
 }

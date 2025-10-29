@@ -427,4 +427,19 @@ export class EventService extends PrismaClient implements OnModuleInit {
       }
     });
   }
+
+  //* Activar el evento
+  async activeEvent(eventId: string) {
+
+    await this.findOne(eventId);
+
+    return await this.event.update({
+      data: {
+        status: StatusEvent.ACTIVE
+      },
+      where: {
+        id: eventId
+      }
+    });
+  }
 }

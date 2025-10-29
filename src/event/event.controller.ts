@@ -1,6 +1,6 @@
 import { StatusEvent } from './common/enums/status.enum';
-import { Controller } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { Controller, ParseUUIDPipe } from '@nestjs/common';
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { EventService } from './event.service';
 import { IdDto, PaginationDto } from 'src/common';
 import { CreateAwardDto } from 'src/award/dto';
@@ -78,5 +78,10 @@ export class EventController {
   @MessagePattern('completedEvent')
   eventCompleted(@Payload() updateEventDto: UpdateEventDto) {
     return this.eventService.eventCompleted(updateEventDto);
+  }
+
+  @EventPattern('activeEvent')
+  activeEvent(@Payload('eventId', ParseUUIDPipe) eventId: string) {
+    return this.eventService.activeEvent(eventId);
   }
 }
